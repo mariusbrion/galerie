@@ -61,6 +61,7 @@
         // Rendu
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio); // Améliore la netteté
         document.body.appendChild(renderer.domElement);
 
         // Contrôles OrbitControls
@@ -79,12 +80,12 @@
 
         // Images et descriptions
         const imageData = [
-            { url: 'carte_chatellerault.jpg', desc: 'A beautiful view of Châtellerault' },
-            { url: 'carte_châtellerault.jpg', desc: 'Historic map of the region' },
+            { url: 'carte_chatellerault.webp', desc: 'A beautiful view of Châtellerault' },
+            { url: 'carte_châtellerault.webp', desc: 'Historic map of the region' },
             { url: 'https://picsum.photos/400/300?random=3', desc: 'Scenic landscape' },
             { url: 'https://picsum.photos/400/300?random=4', desc: 'Urban exploration' },
             { url: 'https://picsum.photos/400/300?random=5', desc: 'Natural beauty' },
-            { url: 'carte_chatellerault2.png', desc: 'Another view of Châtellerault' }
+            { url: 'carte_chatellerault2.webp', desc: 'Another view of Châtellerault' }
         ];
 
         // Création des plans pour les images
@@ -99,6 +100,11 @@
             loadedFont = font; // Stocker la police chargée
             imageData.forEach((data, index) => {
                 loader.load(data.url, (texture) => {
+                    // Optimisation des textures pour la qualité
+                    texture.minFilter = THREE.LinearFilter;
+                    texture.magFilter = THREE.LinearFilter;
+                    texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+
                     const geometry = new THREE.PlaneGeometry(4, 3);
                     const material = new THREE.MeshBasicMaterial({
                         map: texture,
@@ -334,6 +340,7 @@
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio); // Mettre à jour la résolution
         });
 
         // Boucle d'animation
