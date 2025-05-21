@@ -84,7 +84,7 @@
             { url: 'https://picsum.photos/400/300?random=3', desc: 'Scenic landscape' },
             { url: 'https://picsum.photos/400/300?random=4', desc: 'Urban exploration' },
             { url: 'https://picsum.photos/400/300?random=5', desc: 'Natural beauty' },
-            { url: 'carte_chatellerault2.png', desc: 'Another view of Châtellerault' }
+            { url: 'carte_chatellerault2.PNG', desc: 'Another view of Châtellerault' }
         ];
 
         // Création des plans pour les images
@@ -177,6 +177,18 @@
                     plane.mesh.position.z = Math.sin(plane.angle) * radius;
                     plane.text.position.x = plane.mesh.position.x - 2;
                     plane.text.position.z = plane.mesh.position.z;
+                    // Assurer que l'opacité revient à 0.8 si non sélectionné
+                    if (plane.mesh.material.opacity > 0.8) {
+                        let opacity = plane.mesh.material.opacity;
+                        const fadeOut = () => {
+                            opacity -= 0.02;
+                            plane.mesh.material.opacity = opacity;
+                            if (opacity > 0.8) {
+                                requestAnimationFrame(fadeOut);
+                            }
+                        };
+                        fadeOut();
+                    }
                 }
             });
         }
@@ -228,12 +240,33 @@
                         height: 0.01
                     });
                     selectedPlane.text.material.opacity = 0;
+                    // Réduire l'opacité de l'image précédente à 0.8
+                    let opacity = selectedPlane.mesh.material.opacity;
+                    const fadeOut = () => {
+                        opacity -= 0.02;
+                        selectedPlane.mesh.material.opacity = opacity;
+                        if (opacity > 0.8) {
+                            requestAnimationFrame(fadeOut);
+                        }
+                    };
+                    fadeOut();
                 }
                 const clickedPlane = planes.find(p => p.mesh === plane);
                 clickedPlane.isSelected = true;
                 selectedPlane = clickedPlane;
                 targetPosition = plane.position.clone().add(new THREE.Vector3(0, 0, 5));
                 targetLookAt = plane.position.clone();
+
+                // Rendre l'image complètement opaque (100%)
+                let opacity = clickedPlane.mesh.material.opacity;
+                const fadeIn = () => {
+                    opacity += 0.02;
+                    clickedPlane.mesh.material.opacity = opacity;
+                    if (opacity < 1.0) {
+                        requestAnimationFrame(fadeIn);
+                    }
+                };
+                fadeIn();
 
                 // Lancer l'animation d'écriture
                 animateTextWrite(clickedPlane);
@@ -282,6 +315,16 @@
                     height: 0.01
                 });
                 selectedPlane.text.material.opacity = 0;
+                // Réduire l'opacité de l'image à 0.8
+                let opacity = selectedPlane.mesh.material.opacity;
+                const fadeOut = () => {
+                    opacity -= 0.02;
+                    selectedPlane.mesh.material.opacity = opacity;
+                    if (opacity > 0.8) {
+                        requestAnimationFrame(fadeOut);
+                    }
+                };
+                fadeOut();
                 selectedPlane = null;
             }
         });
