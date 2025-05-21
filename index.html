@@ -1,0 +1,176 @@
+<!DOCTYPE html>by
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expérience 3D Interactive</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #f5f5e6; /* Fond beige clair */
+        }
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+        #controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 10;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            background: #333;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #555;
+        }
+        @media (max-width: 768px) {
+            button {
+                padding: 8px 15px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="controls">
+        <button id="fullscreenBtn">Plein écran</button>
+        <button id="resetBtn">Réinitialiser la vue</button>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script>
+        // Initialisation de la scène
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf5f5e6); // Fond beige clair
+
+        // Caméra
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 5, 15);
+
+        // Rendu
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Contrôles OrbitControls
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.minDistance = 5;
+        controls.maxDistance = 50;
+
+        // Éclairage
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.4);
+        directionalLight.position.set(10, 20, 10);
+        scene.add(directionalLight);
+
+        // Images (URLs pour l'exemple)
+        const imageUrls = [
+            'https://picsum.photos/400/300?random=1',
+            'https://picsum.photos/400/300?random=2',
+            'https://picsum.photos/400/300?random=3',
+            'https://picsum.photos/400/300?random=4',
+            'https://picsum.photos/400/300?random=5'
+        ];
+
+        // Création des plans pour les images
+        const planes = [];
+        const loader = new THREE.TextureLoader();
+        imageUrls.forEach((url, index) => {
+            loader.load(url, (texture) => {
+                const geometry = new THREE.PlaneGeometry(4, 3);
+                const material = new THREE.MeshBasicMaterial({
+                    map: texture,
+                    transparent: true,
+                    opacity: 0, // Début à 0 pour fade-in
+                    side: THREE.DoubleSide
+                });
+                const plane = new THREE.Mesh(geometry, material);
+                
+                // Position en spirale
+                const angle = (index / imageUrls.length) * Math.PI * 2;
+                const radius = 8;
+                plane.position.set(
+                    Math.cos(angle) * radius,
+                    index * 2 - (imageUrls.length - 1),
+                    Math.sin(angle) * radius
+                );
+                
+                // Inclinaison aléatoire
+                plane.rotation.x = (Math.random() - 0.5) * 0.3;
+                plane.rotation.y = (Math.random() - 0.5) * 0.3;
+                
+                scene.add(plane);
+                planes.push({ mesh: plane, angle: angle });
+
+                // Animation fade-in
+                let opacity = 0;
+                const fadeIn = () => {
+                    opacity += 0.02;
+                    material.opacity = opacity;
+                    if (opacity < 0.8) {
+                        requestAnimationFrame(fadeIn);
+                    }
+                };
+                fadeIn();
+            });
+        });
+
+        // Animation de rotation des plans
+        function animatePlanes() {
+            planes.forEach(plane => {
+                plane.angle += 0.01;
+                const radius = 8;
+                plane.mesh.position.x = Math.cos(plane.angle) * radius;
+                plane.mesh.position.z = Math.sin(plane.angle) * radius;
+            });
+        }
+
+        // Boutons de contrôle
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        fullscreenBtn.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                renderer.domElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        });
+
+        const resetBtn = document.getElementById('resetBtn');
+        resetBtn.addEventListener('click', () => {
+            camera.position.set(0, 5, 15);
+            controls.target.set(0, 0, 0);
+            controls.update();
+        });
+
+        // Gestion du redimensionnement
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Boucle d'animation
+        function animate() {
+            requestAnimationFrame(animate);
+            animatePlanes();
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+    </script>
+</body>
+</html>
