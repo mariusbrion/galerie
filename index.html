@@ -77,10 +77,10 @@
         directionalLight.position.set(10, 20, 10);
         scene.add(directionalLight);
 
-        // Images (URLs pour l'exemple, première image modifiée)
+        // Images (URLs pour l'exemple, deuxième image modifiée)
         const imageUrls = [
+            'https://picsum.photos/400/300?random=1',
             'carte_châtellerault.jpg', // Image locale
-            'https://picsum.photos/400/300?random=2',
             'https://picsum.photos/400/300?random=3',
             'https://picsum.photos/400/300?random=4',
             'https://picsum.photos/400/300?random=5'
@@ -89,6 +89,8 @@
         // Création des plans pour les images
         const planes = [];
         const loader = new THREE.TextureLoader();
+        let selectedPlane = null;
+
         imageUrls.forEach((url, index) => {
             loader.load(url, (texture) => {
                 const geometry = new THREE.PlaneGeometry(4, 3);
@@ -114,7 +116,7 @@
                 plane.rotation.y = (Math.random() - 0.5) * 0.3;
                 
                 scene.add(plane);
-                planes.push({ mesh: plane, angle: angle });
+                planes.push({ mesh: plane, angle: angle, isSelected: false });
 
                 // Animation fade-in
                 let opacity = 0;
@@ -134,10 +136,12 @@
         // Animation de rotation des plans
         function animatePlanes() {
             planes.forEach(plane => {
-                plane.angle += 0.01;
-                const radius = 8;
-                plane.mesh.position.x = Math.cos(plane.angle) * radius;
-                plane.mesh.position.z = Math.sin(plane.angle) * radius;
+                if (!plane.isSelected) {
+                    plane.angle += 0.01;
+                    const radius = 8;
+                    plane.mesh.position.x = Math.cos(plane.angle) * radius;
+                    plane.mesh.position.z = Math.sin(plane.angle) * radius;
+                }
             });
         }
 
@@ -159,7 +163,15 @@
             const intersects = raycaster.intersectObjects(planes.map(p => p.mesh));
             if (intersects.length > 0) {
                 const plane = intersects[0].object;
-                // Calculer la position cible pour la caméra (devant l'image)
+                // Désélectionner l'image précédente
+                if (selectedPlane) {
+                    selectedPlane.isSelected = false;
+                }
+                // Trouver le plan correspondant dans le tableau
+                const clickedPlane = planes.find(p => p.mesh === plane);
+                clickedPlane.isSelected = true;
+                selectedPlane = clickedPlane;
+                // Calculer la position cible pour la caméra
                 targetPosition = plane.position.clone().add(new THREE.Vector3(0, 0, 5));
                 targetLookAt = plane.position.clone();
             }
@@ -172,7 +184,7 @@
                 controls.target.lerp(targetLookAt, 0.1);
                 controls.update();
                 if (camera.position.distanceTo(targetPosition) < 0.1) {
-                    targetPosition = null; // Arrêter l'animation quand proche
+                    targetPosition = null;
                     targetLookAt = null;
                 }
             }
@@ -195,8 +207,12 @@
             camera.position.set(0, 5, 15);
             controls.target.set(0, 0, 0);
             controls.update();
-            targetPosition = null; // Annuler tout zoom en cours
+            targetPosition = null;
             targetLookAt = null;
+            if (selectedPlane) {
+                selectedPlane.isSelected = false;
+                selectedPlane = null;
+            }
         });
 
         // Gestion du redimensionnement
