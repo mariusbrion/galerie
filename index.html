@@ -1,4 +1,4 @@
-<!DOCTYPE html>by
+<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
@@ -77,9 +77,9 @@
         directionalLight.position.set(10, 20, 10);
         scene.add(directionalLight);
 
-        // Images (URLs pour l'exemple)
+        // Images (URLs pour l'exemple, première image modifiée)
         const imageUrls = [
-            'https://picsum.photos/400/300?random=1',
+            'carte_châtellerault.jpg', // Image locale
             'https://picsum.photos/400/300?random=2',
             'https://picsum.photos/400/300?random=3',
             'https://picsum.photos/400/300?random=4',
@@ -126,6 +126,8 @@
                     }
                 };
                 fadeIn();
+            }, undefined, (error) => {
+                console.error('Erreur de chargement de l\'image :', url, error);
             });
         });
 
@@ -138,6 +140,45 @@
                 plane.mesh.position.z = Math.sin(plane.angle) * radius;
             });
         }
+
+        // Gestion des clics pour agrandir les images
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        let targetPosition = null;
+        let targetLookAt = null;
+
+        function onClick(event) {
+            // Calculer les coordonnées de la souris normalisées
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            // Mettre à jour le raycaster
+            raycaster.setFromCamera(mouse, camera);
+
+            // Vérifier les intersections avec les plans
+            const intersects = raycaster.intersectObjects(planes.map(p => p.mesh));
+            if (intersects.length > 0) {
+                const plane = intersects[0].object;
+                // Calculer la position cible pour la caméra (devant l'image)
+                targetPosition = plane.position.clone().add(new THREE.Vector3(0, 0, 5));
+                targetLookAt = plane.position.clone();
+            }
+        }
+
+        // Animation fluide de la caméra
+        function animateCamera() {
+            if (targetPosition && targetLookAt) {
+                camera.position.lerp(targetPosition, 0.1);
+                controls.target.lerp(targetLookAt, 0.1);
+                controls.update();
+                if (camera.position.distanceTo(targetPosition) < 0.1) {
+                    targetPosition = null; // Arrêter l'animation quand proche
+                    targetLookAt = null;
+                }
+            }
+        }
+
+        window.addEventListener('click', onClick);
 
         // Boutons de contrôle
         const fullscreenBtn = document.getElementById('fullscreenBtn');
@@ -154,6 +195,8 @@
             camera.position.set(0, 5, 15);
             controls.target.set(0, 0, 0);
             controls.update();
+            targetPosition = null; // Annuler tout zoom en cours
+            targetLookAt = null;
         });
 
         // Gestion du redimensionnement
@@ -167,6 +210,7 @@
         function animate() {
             requestAnimationFrame(animate);
             animatePlanes();
+            animateCamera();
             controls.update();
             renderer.render(scene, camera);
         }
