@@ -34,21 +34,10 @@
         button:hover {
             background: #555;
         }
-        .label {
-            background: rgba(0, 0, 0, 0.5);
-            color: white;
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-size: 14px;
-            pointer-events: none;
-        }
         @media (max-width: 768px) {
             button {
                 padding: 8px 15px;
                 font-size: 14px;
-            }
-            .label {
-                font-size: 12px;
             }
         }
     </style>
@@ -60,7 +49,6 @@
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/renderers/CSS2DRenderer.js"></script>
     <script>
         // Initialisation de la scène
         const scene = new THREE.Scene();
@@ -70,17 +58,10 @@
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         camera.position.set(0, 5, 15);
 
-        // Rendu WebGL
+        // Rendu
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
-
-        // Rendu CSS2D pour les labels
-        const labelRenderer = new THREE.CSS2DRenderer();
-        labelRenderer.setSize(window.innerWidth, window.innerHeight);
-        labelRenderer.domElement.style.position = 'absolute';
-        labelRenderer.domElement.style.top = '0px';
-        document.body.appendChild(labelRenderer.domElement);
 
         // Contrôles OrbitControls
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -96,10 +77,10 @@
         directionalLight.position.set(10, 20, 10);
         scene.add(directionalLight);
 
-        // Images (5 images, deuxième image modifiée)
+        // Images (URLs pour l'exemple, première image modifiée)
         const imageUrls = [
-            'https://picsum.photos/400/300?random=1',
-            'carte_chatellerault.jpg', // Image locale avec le nom corrigé
+            'carte_chatellerault.jpg', // Image locale
+            'carte_châtellerault.jpg', // Image locale (présente dans le code original)
             'https://picsum.photos/400/300?random=3',
             'https://picsum.photos/400/300?random=4',
             'https://picsum.photos/400/300?random=5'
@@ -111,59 +92,45 @@
         let selectedPlane = null;
 
         imageUrls.forEach((url, index) => {
-            loader.load(
-                url,
-                (texture) => {
-                    const geometry = new THREE.PlaneGeometry(4, 3);
-                    const material = new THREE.MeshBasicMaterial({
-                        map: texture,
-                        transparent: true,
-                        opacity: 0, // Début à 0 pour fade-in
-                        side: THREE.DoubleSide
-                    });
-                    const plane = new THREE.Mesh(geometry, material);
-                    
-                    // Position en spirale
-                    const angle = (index / imageUrls.length) * Math.PI * 2;
-                    const radius = 8;
-                    plane.position.set(
-                        Math.cos(angle) * radius,
-                        index * 2 - (imageUrls.length - 1),
-                        Math.sin(angle) * radius
-                    );
-                    
-                    // Inclinaison aléatoire
-                    plane.rotation.x = (Math.random() - 0.5) * 0.3;
-                    plane.rotation.y = (Math.random() - 0.5) * 0.3;
-                    
-                    // Ajout d'un label
-                    const labelDiv = document.createElement('div');
-                    labelDiv.className = 'label';
-                    labelDiv.textContent = 'Description de l\'image';
-                    labelDiv.style.display = 'none'; // Caché par défaut
-                    const label = new THREE.CSS2DObject(labelDiv);
-                    label.position.set(0, -2, 0); // Sous l'image
-                    plane.add(label);
+            loader.load(url, (texture) => {
+                const geometry = new THREE.PlaneGeometry(4, 3);
+                const material = new THREE.MeshBasicMaterial({
+                    map: texture,
+                    transparent: true,
+                    opacity: 0, // Début à 0 pour fade-in
+                    side: THREE.DoubleSide
+                });
+                const plane = new THREE.Mesh(geometry, material);
+                
+                // Position en spirale
+                const angle = (index / imageUrls.length) * Math.PI * 2;
+                const radius = 8;
+                plane.position.set(
+                    Math.cos(angle) * radius,
+                    index * 2 - (imageUrls.length - 1),
+                    Math.sin(angle) * radius
+                );
+                
+                // Inclinaison aléatoire
+                plane.rotation.x = (Math.random() - 0.5) * 0.3;
+                plane.rotation.y = (Math.random() - 0.5) * 0.3;
+                
+                scene.add(plane);
+                planes.push({ mesh: plane, angle: angle, isSelected: false });
 
-                    scene.add(plane);
-                    planes.push({ mesh: plane, angle: angle, isSelected: false, label: label });
-
-                    // Animation fade-in
-                    let opacity = 0;
-                    const fadeIn = () => {
-                        opacity += 0.02;
-                        material.opacity = opacity;
-                        if (opacity < 0.8) {
-                            requestAnimationFrame(fadeIn);
-                        }
-                    };
-                    fadeIn();
-                },
-                undefined,
-                (error) => {
-                    console.error(`Erreur de chargement de l'image : ${url}. Vérifiez que le fichier est dans le répertoire racine du dépôt GitHub ou spécifiez le chemin correct (par exemple, 'images/carte_chatellerault.jpg' si dans un sous-dossier).`, error);
-                }
-            );
+                // Animation fade-in
+                let opacity = 0;
+                const fadeIn = () => {
+                    opacity += 0.02;
+                    material.opacity = opacity;
+                    if (opacity < 0.8) {
+                        requestAnimationFrame(fadeIn);
+                    }
+                };
+                fadeIn();
+            }, undefined, (error) => {
+                console.error('Erreur de chargement de l\'image :', url, error);
+            });
         });
 
         // Animation de rotation des plans
@@ -199,12 +166,10 @@
                 // Désélectionner l'image précédente
                 if (selectedPlane) {
                     selectedPlane.isSelected = false;
-                    selectedPlane.label.element.style.display = 'none';
                 }
                 // Trouver le plan correspondant dans le tableau
                 const clickedPlane = planes.find(p => p.mesh === plane);
                 clickedPlane.isSelected = true;
-                clickedPlane.label.element.style.display = 'block'; // Afficher le label
                 selectedPlane = clickedPlane;
                 // Calculer la position cible pour la caméra
                 targetPosition = plane.position.clone().add(new THREE.Vector3(0, 0, 5));
@@ -246,7 +211,6 @@
             targetLookAt = null;
             if (selectedPlane) {
                 selectedPlane.isSelected = false;
-                selectedPlane.label.element.style.display = 'none';
                 selectedPlane = null;
             }
         });
@@ -256,7 +220,6 @@
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
-            labelRenderer.setSize(window.innerWidth, window.innerHeight);
         });
 
         // Boucle d'animation
@@ -266,16 +229,8 @@
             animateCamera();
             controls.update();
             renderer.render(scene, camera);
-            labelRenderer.render(scene, camera);
         }
         animate();
-
-        // Vérification du nombre d'images chargées
-        setTimeout(() => {
-            if (planes.length < 5) {
-                console.warn(`Seules ${planes.length} images sur 5 ont été chargées. Vérifiez les URLs dans 'imageUrls' et assurez-vous que tous les fichiers sont accessibles.`);
-            }
-        }, 5000); // Attendre 5 secondes pour laisser le temps au chargement
     </script>
 </body>
 </html>
