@@ -82,15 +82,13 @@
         const imageData = [
             { url: 'carte_chatellerault.webp', desc: 'A beautiful view of Châtellerault' },
             { url: 'carte_châtellerault.webp', desc: 'Historic map of the region' },
-            { url: 'tenerife.jpg', desc: 'Cette photo a été prise à San Cristóbal de La Laguna, une ville peu touristique du nord de Tenerife, contrastant avec le sud de l’île largement dédié à un tourisme de masse. Tandis que les habitants du nord font face à des problèmes de sécheresse, le sud accueille d’immenses complexes touristiques, comme des parcs aquatiques gourmands en eau. Les toits plats et les façades colorées visibles ici sont caractéristiques de l’architecture vernaculaire locale, adaptée au climat sec et doux de l’île. Cette île est un exemple marquant de la tension entre les intérêts touristiques et les besoins fondamentaux de la population locale, notamment en matière de logement, de ressources et d’accès à l’eau.' },
+            { url: 'tenerife.jpg', desc: 'San Cristóbal de La Laguna, a historic town in northern Tenerife' },
             { url: 'ameagement.JPG', desc: 'Plan d’aménagement urbain détaillé' },
             { url: 'meriadek.jpg', desc: 'Vue du quartier Mériadeck à Bordeaux' },
             { url: 'Marseille.webp', desc: 'Vibrant cityscape of Marseille' },
-            { url: 'chaban.webp', desc: 'Cette photo montre le pont Chaban-Delmas, ouvrage emblématique de Bordeaux franchissant la Garonne. Sa particularité réside dans son tablier central mobile : au lieu de s’ouvrir latéralement comme un pont-levis classique, un segment du pont s’élève verticalement grâce à un système de pylônes et de câbles, permettant le passage des navires de grand gabarit. Ce mécanisme d’élévation, à la fois technique et esthétique, reflète une ingénierie contemporaine adaptée aux contraintes fluviales de la ville.' },
+            { url: 'chaban.webp', desc: 'Pont Chaban-Delmas, Bordeaux’s iconic vertical-lift bridge over the Garonne' },
             { url: 'carte_chatellerault2.webp', desc: 'Another view of Châtellerault' },
-            { url: 'https://picsum.photos/400/300?random=3', desc: 'Scenic landscape' },
-            { url: 'https://picsum.photos/400/300?random=4', desc: 'Urban exploration' },
-            { url: 'https://picsum.photos/400/300?random=5', desc: 'Natural beauty' }
+            { url: 'guggenheim.jpg', desc: 'Iconic Guggenheim Museum in Bilbao' }
         ];
 
         // Création des plans pour les images
@@ -137,7 +135,7 @@
                     // Création du texte (initialement vide)
                     const textGeometry = new THREE.TextGeometry('', {
                         font: loadedFont,
-                        size: 0.3,
+                        size: 0.2, // Police réduite
                         height: 0.01
                     });
                     const textMaterial = new THREE.MeshBasicMaterial({
@@ -215,13 +213,13 @@
                     currentText += plane.fullText[charIndex];
                     const newGeometry = new THREE.TextGeometry(currentText, {
                         font: loadedFont,
-                        size: 0.3,
+                        size: 0.2, // Police réduite
                         height: 0.01
                     });
                     plane.text.geometry.dispose();
                     plane.text.geometry = newGeometry;
                     charIndex++;
-                    setTimeout(write, 50); // Vitesse d'écriture (50ms par caractère)
+                    setTimeout(write, 25); // Vitesse doublée (50ms -> 25ms)
                 }
             };
             write();
@@ -247,7 +245,7 @@
                     selectedPlane.text.geometry.dispose();
                     selectedPlane.text.geometry = new THREE.TextGeometry('', {
                         font: loadedFont,
-                        size: 0.3,
+                        size: 0.2, // Police réduite
                         height: 0.01
                     });
                     selectedPlane.text.material.opacity = 0;
@@ -322,7 +320,7 @@
                 selectedPlane.text.geometry.dispose();
                 selectedPlane.text.geometry = new THREE.TextGeometry('', {
                     font: loadedFont,
-                    size: 0.3,
+                    size: 0.2, // Police réduite
                     height: 0.01
                 });
                 selectedPlane.text.material.opacity = 0;
