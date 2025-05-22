@@ -85,7 +85,7 @@
             { url: 'tenerife.jpg', desc: 'Ville peu touristique du nord de Tenerife, en contraste avec le sud tourné vers un tourisme massif. Ici, les toits plats colorés traduisent une architecture adaptée au climat. L’île illustre les tensions entre surconsommation touristique et besoins locaux, notamment en matière d’eau et de logement.' },
             { url: 'amenagement.JPG', desc: 'Plan d’aménagement urbain détaillé' },
             { url: 'meriadek.jpg', desc: 'Quartier brutaliste des années 60–70, Mériadeck rompt avec l’esthétique bordelaise classique. Dalles minérales, béton massif et urbanisme sur dalle en font un exemple unique d’architecture fonctionnaliste.' },
-            { url: 'Marseille.webp', desc: 'Paysage urbain vibrant de Marseille' },
+            { url: 'Lyon(1).jpg', desc: 'Paysage urbain vibrant de Lyon' },
             { url: 'chaban.webp', desc: 'Ce pont mobile franchit la Garonne grâce à un segment central qui s’élève verticalement, contrairement aux ponts-levis classiques. Une prouesse technique intégrée au paysage urbain.' },
             { url: 'carte_chatellerault2.webp', desc: 'Une autre vue de Châtellerault' },
             { url: 'guggenheim.jpg', desc: 'Musée Guggenheim emblématique à Bilbao' }
@@ -237,7 +237,7 @@
             // Calculer le délai par caractère pour une durée totale de ~2.5 secondes
             const totalDuration = 2500; // 2.5 secondes
             const textLength = formattedText.length;
-            const delayPerChar = Math.min(50, Math.max(10, totalDuration / textLength)); // Entre 10ms et 50ms
+            const delayPerChar = totalDuration / textLength; // Pas de cap
             
             const write = () => {
                 if (charIndex < formattedText.length) {
@@ -250,7 +250,7 @@
                     plane.text.geometry.dispose();
                     plane.text.geometry = newGeometry;
                     charIndex++;
-                    setTimeout(write, delayPerChar); // Délai dynamique
+                    setTimeout(write, delayPerChar); // Délai dynamique sans cap
                 }
             };
             write();
