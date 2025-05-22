@@ -234,26 +234,35 @@
             let charIndex = 0;
             plane.text.material.opacity = 1; // Texte visible dès le début
             
-            // Calculer le délai par caractère pour une durée totale de ~2.5 secondes
+            // Paramètres pour l'animation
             const totalDuration = 2500; // 2.5 secondes
-            const textLength = formattedText.length;
-            const delayPerChar = totalDuration / textLength; // Pas de cap
+            const charsPerUpdate = 10; // Nombre de caractères par mise à jour
+            const totalUpdates = Math.ceil(formattedText.length / charsPerUpdate);
+            const delayPerUpdate = totalDuration / totalUpdates; // Délai entre mises à jour
             
-            const write = () => {
+            let lastUpdateTime = performance.now();
+            
+            const write = (currentTime) => {
                 if (charIndex < formattedText.length) {
-                    currentText += formattedText[charIndex];
-                    const newGeometry = new THREE.TextGeometry(currentText, {
-                        font: loadedFont,
-                        size: 0.2, // Police réduite
-                        height: 0.01
-                    });
-                    plane.text.geometry.dispose();
-                    plane.text.geometry = newGeometry;
-                    charIndex++;
-                    setTimeout(write, delayPerChar); // Délai dynamique sans cap
+                    // Vérifier si assez de temps s'est écoulé pour la mise à jour
+                    if (currentTime - lastUpdateTime >= delayPerUpdate) {
+                        // Ajouter un lot de caractères
+                        const charsToAdd = Math.min(charsPerUpdate, formattedText.length - charIndex);
+                        currentText += formattedText.slice(charIndex, charIndex + charsToAdd);
+                        const newGeometry = new THREE.TextGeometry(currentText, {
+                            font: loadedFont,
+                            size: 0.2, // Police réduite
+                            height: 0.01
+                        });
+                        plane.text.geometry.dispose();
+                        plane.text.geometry = newGeometry;
+                        charIndex += charsToAdd;
+                        lastUpdateTime = currentTime;
+                    }
+                    requestAnimationFrame(write);
                 }
             };
-            write();
+            requestAnimationFrame(write);
         }
 
         // Gestion des clics pour agrandir les images et afficher le texte
