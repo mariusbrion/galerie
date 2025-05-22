@@ -82,11 +82,11 @@
         const imageData = [
             { url: 'carte_chatellerault.webp', desc: 'Une belle vue de Châtellerault' },
             { url: 'carte_châtellerault.webp', desc: 'Carte historique de la région' },
-            { url: 'tenerife.jpg', desc: 'San Cristóbal de La Laguna, ville historique du nord de Tenerife' },
+            { url: 'tenerife.jpg', desc: 'Ville peu touristique du nord de Tenerife, en contraste avec le sud tourné vers un tourisme massif. Ici, les toits plats colorés traduisent une architecture adaptée au climat. L’île illustre les tensions entre surconsommation touristique et besoins locaux, notamment en matière d’eau et de logement.' },
             { url: 'amenagement.JPG', desc: 'Plan d’aménagement urbain détaillé' },
-            { url: 'meriadek.jpg', desc: 'Vue du quartier Mériadeck à Bordeaux' },
+            { url: 'meriadek.jpg', desc: 'Quartier brutaliste des années 60–70, Mériadeck rompt avec l’esthétique bordelaise classique. Dalles minérales, béton massif et urbanisme sur dalle en font un exemple unique d’architecture fonctionnaliste.' },
             { url: 'Marseille.webp', desc: 'Paysage urbain vibrant de Marseille' },
-            { url: 'chaban.webp', desc: 'Pont Chaban-Delmas, pont à levage vertical emblématique de Bordeaux' },
+            { url: 'chaban.webp', desc: 'Ce pont mobile franchit la Garonne grâce à un segment central qui s’élève verticalement, contrairement aux ponts-levis classiques. Une prouesse technique intégrée au paysage urbain.' },
             { url: 'carte_chatellerault2.webp', desc: 'Une autre vue de Châtellerault' },
             { url: 'guggenheim.jpg', desc: 'Musée Guggenheim emblématique à Bilbao' }
         ];
@@ -253,7 +253,7 @@
                     let opacity = selectedPlane.mesh.material.opacity;
                     const fadeOut = () => {
                         opacity -= 0.02;
-                        selectedPlane.mesh.material.opacity = opacity;
+                        plane.mesh.material.opacity = opacity;
                         if (opacity > 0.8) {
                             requestAnimationFrame(fadeOut);
                         }
