@@ -202,15 +202,40 @@
             });
         }
 
-        // Fonction pour animer l'écriture progressive du texte
+        // Fonction pour animer l'écriture progressive du texte avec retours à la ligne
         function animateTextWrite(plane) {
             if (!loadedFont) return; // Attendre que la police soit chargée
+            
+            // Préparer le texte avec des retours à la ligne tous les 50-60 caractères
+            function addLineBreaks(text) {
+                const maxLineLength = 60;
+                let result = '';
+                let currentLineLength = 0;
+                let words = text.split(' ');
+                
+                for (let i = 0; i < words.length; i++) {
+                    let word = words[i];
+                    let wordLength = word.length + (currentLineLength > 0 ? 1 : 0); // +1 pour l'espace
+                    
+                    if (currentLineLength + wordLength > maxLineLength) {
+                        result += '\n';
+                        currentLineLength = 0;
+                    }
+                    
+                    result += (currentLineLength > 0 ? ' ' : '') + word;
+                    currentLineLength += wordLength;
+                }
+                
+                return result;
+            }
+            
+            const formattedText = addLineBreaks(plane.fullText);
             let currentText = '';
             let charIndex = 0;
             plane.text.material.opacity = 1; // Texte visible dès le début
             const write = () => {
-                if (charIndex < plane.fullText.length) {
-                    currentText += plane.fullText[charIndex];
+                if (charIndex < formattedText.length) {
+                    currentText += formattedText[charIndex];
                     const newGeometry = new THREE.TextGeometry(currentText, {
                         font: loadedFont,
                         size: 0.2, // Police réduite
@@ -219,7 +244,7 @@
                     plane.text.geometry.dispose();
                     plane.text.geometry = newGeometry;
                     charIndex++;
-                    setTimeout(write, 25); // Vitesse doublée (50ms -> 25ms)
+                    setTimeout(write, 8); // Vitesse triplée (25ms -> 8ms)
                 }
             };
             write();
@@ -253,7 +278,7 @@
                     let opacity = selectedPlane.mesh.material.opacity;
                     const fadeOut = () => {
                         opacity -= 0.02;
-                        plane.mesh.material.opacity = opacity;
+                        selectedPlane.mesh.material.opacity = opacity;
                         if (opacity > 0.8) {
                             requestAnimationFrame(fadeOut);
                         }
@@ -328,7 +353,7 @@
                 let opacity = selectedPlane.mesh.material.opacity;
                 const fadeOut = () => {
                     opacity -= 0.02;
-                    plane.mesh.material.opacity = opacity;
+                    selectedPlane.mesh.material.opacity = opacity;
                     if (opacity > 0.8) {
                         requestAnimationFrame(fadeOut);
                     }
