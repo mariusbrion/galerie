@@ -80,15 +80,15 @@
 
         // Images et descriptions
         const imageData = [
-            { url: 'carte_chatellerault.webp', desc: 'Une belle vue de Châtellerault' },
+            { url: 'carte_chatellerault.webp', desc: 'Cette carte propose une représentation minimaliste de Châtellerault, avec ses bâtiments en bleu foncé sur fond blanc. Ce contraste met en valeur la densité bâtie et la structure urbaine de la ville, tout en offrant une lecture épurée et graphique du territoire.' },
             { url: 'carte_châtellerault.webp', desc: 'Carte historique de la région' },
-            { url: 'tenerife.jpg', desc: 'Ville peu touristique du nord de Tenerife, en contraste avec le sud tourné vers un tourisme massif. Ici, les toits plats colorés traduisent une architecture adaptée au climat. L’île illustre les tensions entre surconsommation touristique et besoins locaux, notamment en matière d’eau et de logement.' },
-            { url: 'amenagement.JPG', desc: 'Plan d’aménagement urbain détaillé' },
-            { url: 'meriadek.jpg', desc: 'Quartier brutaliste des années 60–70, Mériadeck rompt avec l’esthétique bordelaise classique. Dalles minérales, béton massif et urbanisme sur dalle en font un exemple unique d’architecture fonctionaliste.' },
-            { url: 'Lyon(1).jpg', desc: 'Paysage urbain vibrant de Lyon' },
-            { url: 'chaban.webp', desc: 'Ce pont mobile franchit la Garonne grâce à un segment central qui s’élève verticalement, contrairement aux ponts-levis classiques. Une prouesse technique intégrée au paysage urbain.' },
+            { url: 'tenerife.jpg', desc: 'Cette photo a été prise à San Cristóbal de La Laguna, une ville peu touristique du nord de Tenerife, contrastant avec le sud de l’île largement dédié à un tourisme de masse. Tandis que les habitants du nord font face à des problèmes de sécheresse, le sud accueille d’immenses complexes touristiques, comme des parcs aquatiques gourmands en eau.' },
+            { url: 'amenagement.JPG', desc: 'Les quais de la Vienne illustrent les efforts de redynamisation d’une ville moyenne : réaménagement des berges, valorisation du cadre naturel et mobilités douces cherchent à renforcer l’attractivité du centre face au déclin démographique.' },
+            { url: 'meriadek.jpg', desc: 'Quartier des années 60–70, Mériadeck rompt avec l’esthétique bordelaise par son architecture brutaliste et son urbanisme sur dalle. Malgré son apparence minérale, il intègre des espaces végétalisés en hauteur, illustrant une tentative précoce d’urbain-nature.' },
+            { url: 'Lyon(1).jpg', desc: 'Cette carte inverse les codes traditionnels : le réseau routier y apparaît en blanc sur un fond bleu profond. Ce contraste met en valeur la complexité et la finesse du maillage urbain lyonnais, offrant une lecture graphique et abstraite de la ville à travers ses voies de circulation.' },
+            { url: 'chaban.webp', desc: 'Cette photo montre le pont Chaban-Delmas, ouvrage emblématique de Bordeaux franchissant la Garonne. Sa particularité réside dans son tablier central mobile : au lieu de s’ouvrir latéralement comme un pont-levis classique, un segment du pont s’élève verticalement grâce à un système de pylônes et de câbles, permettant le passage des navires de grand gabarit.' },
             { url: 'carte_chatellerault2.webp', desc: 'Une autre vue de Châtellerault' },
-            { url: 'guggenheim.jpg', desc: 'Musée Guggenheim emblématique à Bilbao' }
+            { url: 'guggenheim.jpg', desc: 'Icône d’architecture contemporaine en titane, le Guggenheim a transformé Bilbao : au-delà de sa forme spectaculaire, il a relancé l’économie locale et amorcé la reconversion urbaine de la ville post-industrielle. Un modèle de régénération par la culture.' }
         ];
 
         // Création des plans pour les images
@@ -206,9 +206,9 @@
         function animateTextWrite(plane) {
             if (!loadedFont) return; // Attendre que la police soit chargée
             
-            // Préparer le texte avec des retours à la ligne tous les 50-60 caractères
+            // Préparer le texte avec des retours à la ligne tous les 60-70 caractères
             function addLineBreaks(text) {
-                const maxLineLength = 60;
+                const maxLineLength = 70;
                 let result = '';
                 let currentLineLength = 0;
                 let words = text.split(' ');
