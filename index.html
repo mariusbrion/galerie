@@ -84,7 +84,7 @@
             { url: 'carte_châtellerault.webp', desc: 'Carte historique de la région' },
             { url: 'tenerife.jpg', desc: 'Ville peu touristique du nord de Tenerife, en contraste avec le sud tourné vers un tourisme massif. Ici, les toits plats colorés traduisent une architecture adaptée au climat. L’île illustre les tensions entre surconsommation touristique et besoins locaux, notamment en matière d’eau et de logement.' },
             { url: 'amenagement.JPG', desc: 'Plan d’aménagement urbain détaillé' },
-            { url: 'meriadek.jpg', desc: 'Quartier brutaliste des années 60–70, Mériadeck rompt avec l’esthétique bordelaise classique. Dalles minérales, béton massif et urbanisme sur dalle en font un exemple unique d’architecture fonctionnaliste.' },
+            { url: 'meriadek.jpg', desc: 'Quartier brutaliste des années 60–70, Mériadeck rompt avec l’esthétique bordelaise classique. Dalles minérales, béton massif et urbanisme sur dalle en font un exemple unique d’architecture funcionaliste.' },
             { url: 'Lyon(1).jpg', desc: 'Paysage urbain vibrant de Lyon' },
             { url: 'chaban.webp', desc: 'Ce pont mobile franchit la Garonne grâce à un segment central qui s’élève verticalement, contrairement aux ponts-levis classiques. Une prouesse technique intégrée au paysage urbain.' },
             { url: 'carte_chatellerault2.webp', desc: 'Une autre vue de Châtellerault' },
@@ -230,25 +230,24 @@
             }
             
             const formattedText = addLineBreaks(plane.fullText);
+            const lines = formattedText.split('\n');
             let currentText = '';
-            let charIndex = 0;
+            let lineIndex = 0;
             plane.text.material.opacity = 1; // Texte visible dès le début
             
             // Paramètres pour l'animation
             const totalDuration = 2500; // 2.5 secondes
-            const charsPerUpdate = 10; // Nombre de caractères par mise à jour
-            const totalUpdates = Math.ceil(formattedText.length / charsPerUpdate);
-            const delayPerUpdate = totalDuration / totalUpdates; // Délai entre mises à jour
+            const totalLines = lines.length;
+            const delayPerLine = totalDuration / totalLines; // Délai entre lignes
             
             let lastUpdateTime = performance.now();
             
             const write = (currentTime) => {
-                if (charIndex < formattedText.length) {
+                if (lineIndex < lines.length) {
                     // Vérifier si assez de temps s'est écoulé pour la mise à jour
-                    if (currentTime - lastUpdateTime >= delayPerUpdate) {
-                        // Ajouter un lot de caractères
-                        const charsToAdd = Math.min(charsPerUpdate, formattedText.length - charIndex);
-                        currentText += formattedText.slice(charIndex, charIndex + charsToAdd);
+                    if (currentTime - lastUpdateTime >= delayPerLine) {
+                        // Ajouter la ligne complète
+                        currentText += (lineIndex > 0 ? '\n' : '') + lines[lineIndex];
                         const newGeometry = new THREE.TextGeometry(currentText, {
                             font: loadedFont,
                             size: 0.2, // Police réduite
@@ -256,7 +255,7 @@
                         });
                         plane.text.geometry.dispose();
                         plane.text.geometry = newGeometry;
-                        charIndex += charsToAdd;
+                        lineIndex++;
                         lastUpdateTime = currentTime;
                     }
                     requestAnimationFrame(write);
