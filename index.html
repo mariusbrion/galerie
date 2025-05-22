@@ -267,6 +267,7 @@
         const mouse = new THREE.Vector2();
         let targetPosition = null;
         let targetLookAt = null;
+        let pendingTextAnimation = null;
 
         function onClick(event) {
             mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
@@ -314,8 +315,8 @@
                 };
                 fadeIn();
 
-                // Lancer l'animation d'écriture
-                animateTextWrite(clickedPlane);
+                // Stocker la plane pour l'animation du texte après le zoom
+                pendingTextAnimation = clickedPlane;
             }
         }
 
@@ -326,6 +327,11 @@
                 controls.target.lerp(targetLookAt, 0.1);
                 controls.update();
                 if (camera.position.distanceTo(targetPosition) < 0.1) {
+                    // Zoom terminé, lancer l'animation du texte si en attente
+                    if (pendingTextAnimation) {
+                        animateTextWrite(pendingTextAnimation);
+                        pendingTextAnimation = null;
+                    }
                     targetPosition = null;
                     targetLookAt = null;
                 }
@@ -351,6 +357,7 @@
             controls.update();
             targetPosition = null;
             targetLookAt = null;
+            pendingTextAnimation = null; // Annuler toute animation de texte en attente
             if (selectedPlane) {
                 selectedPlane.isSelected = false;
                 // Effacer et cacher le texte
@@ -365,7 +372,7 @@
                 let opacity = selectedPlane.mesh.material.opacity;
                 const fadeOut = () => {
                     opacity -= 0.02;
-                    plane.mesh.material.opacity = opacity;
+                    selectedPlane.mesh.material.opacity = opacity;
                     if (opacity > 0.8) {
                         requestAnimationFrame(fadeOut);
                     }
