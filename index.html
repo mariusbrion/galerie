@@ -80,15 +80,15 @@
 
         // Images et descriptions
         const imageData = [
-            { url: 'carte_chatellerault.webp', desc: 'A beautiful view of Châtellerault' },
-            { url: 'carte_châtellerault.webp', desc: 'Historic map of the region' },
-            { url: 'tenerife.jpg', desc: 'San Cristóbal de La Laguna, a historic town in northern Tenerife' },
+            { url: 'carte_chatellerault.webp', desc: 'Une belle vue de Châtellerault' },
+            { url: 'carte_châtellerault.webp', desc: 'Carte historique de la région' },
+            { url: 'tenerife.jpg', desc: 'San Cristóbal de La Laguna, ville historique du nord de Tenerife' },
             { url: 'amenagement.JPG', desc: 'Plan d’aménagement urbain détaillé' },
             { url: 'meriadek.jpg', desc: 'Vue du quartier Mériadeck à Bordeaux' },
-            { url: 'Marseille.webp', desc: 'Vibrant cityscape of Marseille' },
-            { url: 'chaban.webp', desc: 'Pont Chaban-Delmas, Bordeaux’s iconic vertical-lift bridge over the Garonne' },
-            { url: 'carte_chatellerault2.webp', desc: 'Another view of Châtellerault' },
-            { url: 'guggenheim.jpg', desc: 'Iconic Guggenheim Museum in Bilbao' }
+            { url: 'Marseille.webp', desc: 'Paysage urbain vibrant de Marseille' },
+            { url: 'chaban.webp', desc: 'Pont Chaban-Delmas, pont à levage vertical emblématique de Bordeaux' },
+            { url: 'carte_chatellerault2.webp', desc: 'Une autre vue de Châtellerault' },
+            { url: 'guggenheim.jpg', desc: 'Musée Guggenheim emblématique à Bilbao' }
         ];
 
         // Création des plans pour les images
@@ -99,7 +99,7 @@
 
         // Font loader pour le texte
         const fontLoader = new THREE.FontLoader();
-        fontLoader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', (font) => {
+        fontLoader.load('https://threejs.org/examples/fonts/gentilis_regular.typeface.json', (font) => {
             loadedFont = font; // Stocker la police chargée
             imageData.forEach((data, index) => {
                 loader.load(data.url, (texture) => {
@@ -328,7 +328,7 @@
                 let opacity = selectedPlane.mesh.material.opacity;
                 const fadeOut = () => {
                     opacity -= 0.02;
-                    selectedPlane.mesh.material.opacity = opacity;
+                    plane.mesh.material.opacity = opacity;
                     if (opacity > 0.8) {
                         requestAnimationFrame(fadeOut);
                     }
