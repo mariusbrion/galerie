@@ -87,7 +87,10 @@
             { url: 'meriadek.jpg', desc: 'Vue du quartier Mériadeck à Bordeaux' },
             { url: 'Marseille.webp', desc: 'Vibrant cityscape of Marseille' },
             { url: 'chaban.webp', desc: 'Cette photo montre le pont Chaban-Delmas, ouvrage emblématique de Bordeaux franchissant la Garonne. Sa particularité réside dans son tablier central mobile : au lieu de s’ouvrir latéralement comme un pont-levis classique, un segment du pont s’élève verticalement grâce à un système de pylônes et de câbles, permettant le passage des navires de grand gabarit. Ce mécanisme d’élévation, à la fois technique et esthétique, reflète une ingénierie contemporaine adaptée aux contraintes fluviales de la ville.' },
-            { url: 'carte_chatellerault2.webp', desc: 'Another view of Châtellerault' }
+            { url: 'carte_chatellerault2.webp', desc: 'Another view of Châtellerault' },
+            { url: 'https://picsum.photos/400/300?random=3', desc: 'Scenic landscape' },
+            { url: 'https://picsum.photos/400/300?random=4', desc: 'Urban exploration' },
+            { url: 'https://picsum.photos/400/300?random=5', desc: 'Natural beauty' }
         ];
 
         // Création des plans pour les images
@@ -132,18 +135,28 @@
                     scene.add(plane);
 
                     // Création du texte (initialement vide)
-                    const textGroup = new THREE.Group(); // Groupe pour les lignes de texte
-                    textGroup.position.set(
+                    const textGeometry = new THREE.TextGeometry('', {
+                        font: loadedFont,
+                        size: 0.3,
+                        height: 0.01
+                    });
+                    const textMaterial = new THREE.MeshBasicMaterial({
+                        color: 0x333333,
+                        transparent: true,
+                        opacity: 0
+                    });
+                    const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+                    textMesh.position.set(
                         plane.position.x - 2,
                         plane.position.y - 2,
                         plane.position.z
                     );
-                    textGroup.rotation.set(plane.rotation.x, plane.rotation.y, 0);
-                    scene.add(textGroup);
+                    textMesh.rotation.set(plane.rotation.x, plane.rotation.y, 0);
+                    scene.add(textMesh);
 
                     planes.push({ 
                         mesh: plane, 
-                        textGroup: textGroup, 
+                        text: textMesh, 
                         fullText: data.desc, 
                         angle: angle, 
                         isSelected: false 
@@ -173,8 +186,8 @@
                     const radius = 8;
                     plane.mesh.position.x = Math.cos(plane.angle) * radius;
                     plane.mesh.position.z = Math.sin(plane.angle) * radius;
-                    plane.textGroup.position.x = plane.mesh.position.x - 2;
-                    plane.textGroup.position.z = plane.mesh.position.z;
+                    plane.text.position.x = plane.mesh.position.x - 2;
+                    plane.text.position.z = plane.mesh.position.z;
                     // Assurer que l'opacité revient à 0.8 si non sélectionné
                     if (plane.mesh.material.opacity > 0.8) {
                         let opacity = plane.mesh.material.opacity;
@@ -191,115 +204,24 @@
             });
         }
 
-        // Fonction pour diviser le texte en lignes
-        function splitTextIntoLines(text, isChaban = false) {
-            const lines = [];
-            let currentLine = '';
-            let charCount = 0;
-            let wordCount = 0;
-            const words = text.split(' ');
-
-            for (let i = 0; i < words.length; i++) {
-                const word = words[i];
-                const wordLength = word.length + (currentLine ? 1 : 0); // +1 pour l'espace
-
-                if (isChaban && currentLine === 'Cette photo montre le' && word === 'pont') {
-                    // Forcer un saut de ligne après "pont" pour chaban.webp
-                    currentLine += ' ' + word;
-                    lines.push(currentLine);
-                    currentLine = '';
-                    charCount = 0;
-                    wordCount = 0;
-                    continue;
-                }
-
-                if (charCount + wordLength > 60 || (charCount > 50 && wordCount >= 5)) {
-                    lines.push(currentLine);
-                    currentLine = word;
-                    charCount = word.length;
-                    wordCount = 1;
-                } else {
-                    currentLine += (currentLine ? ' ' : '') + word;
-                    charCount += wordLength;
-                    wordCount++;
-                }
-            }
-
-            if (currentLine) {
-                lines.push(currentLine);
-            }
-
-            return lines;
-        }
-
-        // Fonction pour animer l'écriture progressive du texte avec lignes
+        // Fonction pour animer l'écriture progressive du texte
         function animateTextWrite(plane) {
             if (!loadedFont) return; // Attendre que la police soit chargée
-
-            // Nettoyer les anciens meshes de texte
-            plane.textGroup.children.forEach(child => {
-                child.geometry.dispose();
-                plane.textGroup.remove(child);
-            });
-
-            // Diviser le texte en lignes
-            const isChaban = plane.fullText.includes('pont Chaban-Delmas');
-            const lines = splitTextIntoLines(plane.fullText, isChaban);
-
-            let currentText = lines.map(() => ''); // Texte actuel pour chaque ligne
-            let charIndex = 0; // Index global du caractère
-            let lineIndex = 0; // Index de la ligne actuelle
-            let totalChars = lines.join('').length; // Total des caractères
-
-            plane.textGroup.children.forEach(child => plane.textGroup.remove(child)); // Nettoyer
-
-            // Créer un mesh pour chaque ligne
-            const textMeshes = lines.map((_, i) => {
-                const geometry = new THREE.TextGeometry('', {
-                    font: loadedFont,
-                    size: 0.3,
-                    height: 0.01
-                });
-                const material = new THREE.MeshBasicMaterial({
-                    color: 0x333333,
-                    transparent: true,
-                    opacity: 1
-                });
-                const mesh = new THREE.Mesh(geometry, material);
-                mesh.position.y = -i * 0.4; // Espacement vertical des lignes
-                plane.textGroup.add(mesh);
-                return mesh;
-            });
-
+            let currentText = '';
+            let charIndex = 0;
+            plane.text.material.opacity = 1; // Texte visible dès le début
             const write = () => {
-                if (charIndex < totalChars) {
-                    // Trouver la ligne actuelle
-                    let currentCharCount = 0;
-                    let targetLineIndex = 0;
-                    for (let i = 0; i < lines.length; i++) {
-                        if (charIndex < currentCharCount + lines[i].length) {
-                            targetLineIndex = i;
-                            break;
-                        }
-                        currentCharCount += lines[i].length;
-                    }
-
-                    if (targetLineIndex !== lineIndex) {
-                        lineIndex = targetLineIndex;
-                    }
-
-                    // Ajouter un caractère à la ligne actuelle
-                    currentText[lineIndex] = lines[lineIndex].slice(0, charIndex - currentCharCount + 1);
-                    const newGeometry = new THREE.TextGeometry(currentText[lineIndex], {
+                if (charIndex < plane.fullText.length) {
+                    currentText += plane.fullText[charIndex];
+                    const newGeometry = new THREE.TextGeometry(currentText, {
                         font: loadedFont,
                         size: 0.3,
                         height: 0.01
                     });
-                    textMeshes[lineIndex].geometry.dispose();
-                    textMeshes[lineIndex].geometry = newGeometry;
-
+                    plane.text.geometry.dispose();
+                    plane.text.geometry = newGeometry;
                     charIndex++;
-                    setTimeout(write, 12); // Vitesse d'écriture (12ms par caractère)
+                    setTimeout(write, 50); // Vitesse d'écriture (50ms par caractère)
                 }
             };
             write();
@@ -322,10 +244,13 @@
                 if (selectedPlane) {
                     selectedPlane.isSelected = false;
                     // Effacer et cacher le texte précédent
-                    selectedPlane.textGroup.children.forEach(child => {
-                        child.geometry.dispose();
-                        selectedPlane.textGroup.remove(child);
+                    selectedPlane.text.geometry.dispose();
+                    selectedPlane.text.geometry = new THREE.TextGeometry('', {
+                        font: loadedFont,
+                        size: 0.3,
+                        height: 0.01
                     });
+                    selectedPlane.text.material.opacity = 0;
                     // Réduire l'opacité de l'image précédente à 0.8
                     let opacity = selectedPlane.mesh.material.opacity;
                     const fadeOut = () => {
@@ -394,10 +319,13 @@
             if (selectedPlane) {
                 selectedPlane.isSelected = false;
                 // Effacer et cacher le texte
-                selectedPlane.textGroup.children.forEach(child => {
-                    child.geometry.dispose();
-                    selectedPlane.textGroup.remove(child);
+                selectedPlane.text.geometry.dispose();
+                selectedPlane.text.geometry = new THREE.TextGeometry('', {
+                    font: loadedFont,
+                    size: 0.3,
+                    height: 0.01
                 });
+                selectedPlane.text.material.opacity = 0;
                 // Réduire l'opacité de l'image à 0.8
                 let opacity = selectedPlane.mesh.material.opacity;
                 const fadeOut = () => {
