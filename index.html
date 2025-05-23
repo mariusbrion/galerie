@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Expérience 3D Interactive</title>
+    <title>Globe 3D Interactif</title>
     <style>
         body {
             margin: 0;
@@ -56,12 +56,12 @@
 
         // Caméra
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 5, 15);
+        camera.position.set(0, 0, 15);
 
         // Rendu
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio); // Améliore la netteté
+        renderer.setPixelRatio(window.devicePixelRatio);
         document.body.appendChild(renderer.domElement);
 
         // Contrôles OrbitControls
@@ -78,18 +78,88 @@
         directionalLight.position.set(10, 20, 10);
         scene.add(directionalLight);
 
-        // Images et descriptions
+        // Création du globe
+        const globeRadius = 5;
+        const globeGeometry = new THREE.SphereGeometry(globeRadius, 64, 64);
+        const textureLoader = new THREE.TextureLoader();
+        const globeTexture = textureLoader.load('https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg');
+        const globeMaterial = new THREE.MeshStandardMaterial({
+            map: globeTexture,
+            roughness: 0.8,
+            metalness: 0.2
+        });
+        const globe = new THREE.Mesh(globeGeometry, globeMaterial);
+        scene.add(globe);
+
+        // Ajout des lignes néon bleues (effet futuriste)
+        const wireframeGeometry = new THREE.EdgesGeometry(globeGeometry);
+        const wireframeMaterial = new THREE.LineBasicMaterial({
+            color: 0x00ccff,
+            linewidth: 2,
+            transparent: true,
+            opacity: 0.5
+        });
+        const wireframe = new THREE.LineSegments(wireframeGeometry, wireframeMaterial);
+        globe.add(wireframe);
+
+        // Données des images avec coordonnées géographiques (latitude, longitude)
         const imageData = [
-            { url: 'carte_chatellerault.webp', desc: 'Cette carte propose une représentation minimaliste de Châtellerault, avec ses bâtiments en bleu foncé sur fond blanc. Ce contraste met en valeur la densité bâtie et la structure urbaine de la ville, tout en offrant une lecture épurée et graphique du territoire.' },
-            { url: 'carte_châtellerault.webp', desc: 'Carte historique de la région' },
-            { url: 'tenerife.jpg', desc: 'Cette photo a été prise à San Cristóbal de La Laguna, une ville peu touristique du nord de Tenerife, contrastant avec le sud de l’île largement dédié à un tourisme de masse. Tandis que les habitants du nord font face à des problèmes de sécheresse, le sud accueille d’immenses complexes touristiques, comme des parcs aquatiques gourmands en eau.' },
-            { url: 'amenagement.JPG', desc: 'Les quais de la Vienne illustrent les efforts de redynamisation d’une ville moyenne : réaménagement des berges, valorisation du cadre naturel et mobilités douces cherchent à renforcer l’attractivité du centre face au déclin démographique.' },
-            { url: 'meriadek.jpg', desc: 'Quartier des années 60–70, Mériadeck rompt avec l’esthétique bordelaise par son architecture brutaliste et son urbanisme sur dalle. Malgré son apparence minérale, il intègre des espaces végétalisés en hauteur, illustrant une tentative précoce d’urbain-nature.' },
-            { url: 'Lyon(1).jpg', desc: 'Cette carte inverse les codes traditionnels : le réseau routier y apparaît en blanc sur un fond bleu profond. Ce contraste met en valeur la complexité et la finesse du maillage urbain lyonnais, offrant une lecture graphique et abstraite de la ville à travers ses voies de circulation.' },
-            { url: 'chaban.webp', desc: 'Cette photo montre le pont Chaban-Delmas, ouvrage emblématique de Bordeaux franchissant la Garonne. Sa particularité réside dans son tablier central mobile : au lieu de s’ouvrir latéralement comme un pont-levis classique, un segment du pont s’élève verticalement grâce à un système de pylônes et de câbles, permettant le passage des navires de grand gabarit.' },
-            { url: 'shangai.jpg', desc: 'Cette modélisation 3D illustre le quartier de Lujiazui et ses abords, où se côtoient gratte-ciels emblématiques (Shanghai Tower, World Financial Center...) et quartiers résidentiels plus modestes. Le contraste est frappant : verticalité extrême d’un côté, maisons basses et HLM de l’autre. Ce mélange d’échelles et de tissus urbains reflète la complexité et la densité unique de Shanghai.' },
-            { url: 'guggenheim.jpg', desc: 'Icône d’architecture contemporaine en titane, le Guggenheim a transformé Bilbao : au-delà de sa forme spectaculaire, il a relancé l’économie locale et amorcé la reconversion urbaine de la ville post-industrielle. Un modèle de régénération par la culture.' }
+            { 
+                url: 'carte_chatellerault.webp', 
+                desc: 'Cette carte propose une représentation minimaliste de Châtellerault, avec ses bâtiments en bleu foncé sur fond blanc. Ce contraste met en valeur la densité bâtie et la structure urbaine de la ville, tout en offrant une lecture épurée et graphique du territoire.', 
+                lat: 46.816, long: 0.545 // Châtellerault, France
+            },
+            { 
+                url: 'carte_châtellerault.webp', 
+                desc: 'Carte historique de la région', 
+                lat: 46.816, long: 0.545 // Châtellerault, France
+            },
+            { 
+                url: 'tenerife.jpg', 
+                desc: 'Cette photo a été prise à San Cristóbal de La Laguna, une ville peu touristique du nord de Tenerife, contrastant avec le sud de l’île largement dédié à un tourisme de masse. Tandis que les habitants du nord font face à des problèmes de sécheresse, le sud accueille d’immenses complexes touristiques, comme des parcs aquatiques gourmands en eau.', 
+                lat: 28.485, long: -16.320 // San Cristóbal de La Laguna, Tenerife
+            },
+            { 
+                url: 'amenagement.JPG', 
+                desc: 'Les quais de la Vienne illustrent les efforts de redynamisation d’une ville moyenne : réaménagement des berges, valorisation du cadre naturel et mobilités douces cherchent à renforcer l’attractivité du centre face au déclin démographique.', 
+                lat: 46.816, long: 0.545 // Châtellerault, France
+            },
+            { 
+                url: 'meriadek.jpg', 
+                desc: 'Quartier des années 60–70, Mériadeck rompt avec l’esthétique bordelaise par son architecture brutaliste et son urbanisme sur dalle. Malgré son apparence minérale, il intègre des espaces végétalisés en hauteur, illustrant une tentative précoce d’urbain-nature.', 
+                lat: 44.837, long: -0.583 // Bordeaux, France
+            },
+            { 
+                url: 'Lyon(1).jpg', 
+                desc: 'Cette carte inverse les codes traditionnels : le réseau routier y apparaît en blanc sur un fond bleu profond. Ce contraste met en valeur la complexité et la finesse du maillage urbain lyonnais, offrant une lecture graphique et abstraite de la ville à travers ses voies de circulation.', 
+                lat: 45.764, long: 4.835 // Lyon, France
+            },
+            { 
+                url: 'chaban.webp', 
+                desc: 'Cette photo montre le pont Chaban-Delmas, ouvrage emblématique de Bordeaux franchissant la Garonne. Sa particularité réside dans son tablier central mobile : au lieu de s’ouvrir latéralement comme un pont-levis classique, un segment du pont s’élève verticalement grâce à un système de pylônes et de câbles, permettant le passage des navires de grand gabarit.', 
+                lat: 44.837, long: -0.583 // Bordeaux, France
+            },
+            { 
+                url: 'shangai.jpg', 
+                desc: 'Cette modélisation 3D illustre le quartier de Lujiazui et ses abords, où se côtoient gratte-ciels emblématiques (Shanghai Tower, World Financial Center...) et quartiers résidentiels plus modestes. Le contraste est frappant : verticalité extrême d’un côté, maisons basses et HLM de l’autre. Ce mélange d’échelles et de tissus urbains reflète la complexité et la densité unique de Shanghai.', 
+                lat: 31.230, long: 121.473 // Shanghai, Chine
+            },
+            { 
+                url: 'guggenheim.jpg', 
+                desc: 'Icône d’architecture contemporaine en titane, le Guggenheim a transformé Bilbao : au-delà de sa forme spectaculaire, il a relancé l’économie locale et amorcé la reconversion urbaine de la ville post-industrielle. Un modèle de régénération par la culture.', 
+                lat: 43.263, long: -2.935 // Bilbao, Espagne
+            }
         ];
+
+        // Fonction pour convertir latitude/longitude en coordonnées 3D
+        function latLongToVector3(lat, long, radius) {
+            const phi = (90 - lat) * (Math.PI / 180);
+            const theta = (long + 180) * (Math.PI / 180);
+            const x = -radius * Math.sin(phi) * Math.cos(theta);
+            const z = radius * Math.sin(phi) * Math.sin(theta);
+            const y = radius * Math.cos(phi);
+            return new THREE.Vector3(x, y, z);
+        }
 
         // Création des plans pour les images
         const planes = [];
@@ -100,42 +170,32 @@
         // Font loader pour le texte
         const fontLoader = new THREE.FontLoader();
         fontLoader.load('https://threejs.org/examples/fonts/gentilis_regular.typeface.json', (font) => {
-            loadedFont = font; // Stocker la police chargée
+            loadedFont = font;
             imageData.forEach((data, index) => {
                 loader.load(data.url, (texture) => {
-                    // Optimisation des textures pour la qualité
                     texture.minFilter = THREE.LinearFilter;
                     texture.magFilter = THREE.LinearFilter;
                     texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
 
-                    const geometry = new THREE.PlaneGeometry(4, 3);
+                    const geometry = new THREE.PlaneGeometry(1, 0.75); // Taille réduite pour le globe
                     const material = new THREE.MeshBasicMaterial({
                         map: texture,
                         transparent: true,
-                        opacity: 0,
+                        opacity: 0.8,
                         side: THREE.DoubleSide
                     });
                     const plane = new THREE.Mesh(geometry, material);
-                    
-                    // Position en spirale
-                    const angle = (index / imageData.length) * Math.PI * 2;
-                    const radius = 8;
-                    plane.position.set(
-                        Math.cos(angle) * radius,
-                        index * 2 - (imageData.length - 1),
-                        Math.sin(angle) * radius
-                    );
-                    
-                    // Inclinaison aléatoire
-                    plane.rotation.x = (Math.random() - 0.5) * 0.3;
-                    plane.rotation.y = (Math.random() - 0.5) * 0.3;
-                    
+
+                    // Position sur le globe
+                    const position = latLongToVector3(data.lat, data.long, globeRadius + 0.1);
+                    plane.position.copy(position);
+                    plane.lookAt(new THREE.Vector3(0, 0, 0)); // Orienté vers le centre du globe
                     scene.add(plane);
 
-                    // Création du texte (initialement vide)
+                    // Création du texte
                     const textGeometry = new THREE.TextGeometry('', {
                         font: loadedFont,
-                        size: 0.2, // Police réduite
+                        size: 0.2,
                         height: 0.01
                     });
                     const textMaterial = new THREE.MeshBasicMaterial({
@@ -144,19 +204,14 @@
                         opacity: 0
                     });
                     const textMesh = new THREE.Mesh(textGeometry, textMaterial);
-                    textMesh.position.set(
-                        plane.position.x - 2,
-                        plane.position.y - 2,
-                        plane.position.z
-                    );
-                    textMesh.rotation.set(plane.rotation.x, plane.rotation.y, 0);
+                    textMesh.position.copy(position).add(new THREE.Vector3(0, -0.5, 0));
+                    textMesh.rotation.copy(plane.rotation);
                     scene.add(textMesh);
 
                     planes.push({ 
                         mesh: plane, 
                         text: textMesh, 
                         fullText: data.desc, 
-                        angle: angle, 
                         isSelected: false 
                     });
 
@@ -176,37 +231,10 @@
             });
         });
 
-        // Animation de rotation des plans
-        function animatePlanes() {
-            planes.forEach(plane => {
-                if (!plane.isSelected) {
-                    plane.angle += 0.01;
-                    const radius = 8;
-                    plane.mesh.position.x = Math.cos(plane.angle) * radius;
-                    plane.mesh.position.z = Math.sin(plane.angle) * radius;
-                    plane.text.position.x = plane.mesh.position.x - 2;
-                    plane.text.position.z = plane.mesh.position.z;
-                    // Assurer que l'opacité revient à 0.8 si non sélectionné
-                    if (plane.mesh.material.opacity > 0.8) {
-                        let opacity = plane.mesh.material.opacity;
-                        const fadeOut = () => {
-                            opacity -= 0.02;
-                            plane.mesh.material.opacity = opacity;
-                            if (opacity > 0.8) {
-                                requestAnimationFrame(fadeOut);
-                            }
-                        };
-                        fadeOut();
-                    }
-                }
-            });
-        }
-
         // Fonction pour animer l'écriture progressive du texte avec retours à la ligne
         function animateTextWrite(plane) {
-            if (!loadedFont) return; // Attendre que la police soit chargée
+            if (!loadedFont) return;
             
-            // Préparer le texte avec des retours à la ligne tous les 60-70 caractères
             function addLineBreaks(text) {
                 const maxLineLength = 70;
                 let result = '';
@@ -215,7 +243,7 @@
                 
                 for (let i = 0; i < words.length; i++) {
                     let word = words[i];
-                    let wordLength = word.length + (currentLineLength > 0 ? 1 : 0); // +1 pour l'espace
+                    let wordLength = word.length + (currentLineLength > 0 ? 1 : 0);
                     
                     if (currentLineLength + wordLength > maxLineLength) {
                         result += '\n';
@@ -233,22 +261,18 @@
             const lines = formattedText.split('\n');
             let currentText = '';
             let lineIndex = 0;
-            plane.text.material.opacity = 1; // Texte visible dès le début
+            plane.text.material.opacity = 1;
             
-            // Paramètres pour l'animation
-            const delayPerLine = 50; // 50ms entre chaque ligne, fixe pour toutes les images
-            
+            const delayPerLine = 50;
             let lastUpdateTime = performance.now();
             
             const write = (currentTime) => {
                 if (lineIndex < lines.length) {
-                    // Vérifier si assez de temps s'est écoulé pour la mise à jour
                     if (currentTime - lastUpdateTime >= delayPerLine) {
-                        // Ajouter la ligne complète
                         currentText += (lineIndex > 0 ? '\n' : '') + lines[lineIndex];
                         const newGeometry = new THREE.TextGeometry(currentText, {
                             font: loadedFont,
-                            size: 0.2, // Police réduite
+                            size: 0.2,
                             height: 0.01
                         });
                         plane.text.geometry.dispose();
@@ -262,7 +286,7 @@
             requestAnimationFrame(write);
         }
 
-        // Gestion des clics pour agrandir les images et afficher le texte
+        // Gestion des clics
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
         let targetPosition = null;
@@ -279,15 +303,13 @@
                 const plane = intersects[0].object;
                 if (selectedPlane) {
                     selectedPlane.isSelected = false;
-                    // Effacer et cacher le texte précédent
                     selectedPlane.text.geometry.dispose();
                     selectedPlane.text.geometry = new THREE.TextGeometry('', {
                         font: loadedFont,
-                        size: 0.2, // Police réduite
+                        size: 0.2,
                         height: 0.01
                     });
                     selectedPlane.text.material.opacity = 0;
-                    // Réduire l'opacité de l'image précédente à 0.8
                     let opacity = selectedPlane.mesh.material.opacity;
                     const fadeOut = () => {
                         opacity -= 0.02;
@@ -301,10 +323,9 @@
                 const clickedPlane = planes.find(p => p.mesh === plane);
                 clickedPlane.isSelected = true;
                 selectedPlane = clickedPlane;
-                targetPosition = plane.position.clone().add(new THREE.Vector3(0, 0, 5));
+                targetPosition = plane.position.clone().multiplyScalar(1.5); // Zoom à 1.5x la distance
                 targetLookAt = plane.position.clone();
 
-                // Rendre l'image complètement opaque (100%)
                 let opacity = clickedPlane.mesh.material.opacity;
                 const fadeIn = () => {
                     opacity += 0.02;
@@ -315,7 +336,6 @@
                 };
                 fadeIn();
 
-                // Stocker la plane pour l'animation du texte après le zoom
                 pendingTextAnimation = clickedPlane;
             }
         }
@@ -327,7 +347,6 @@
                 controls.target.lerp(targetLookAt, 0.1);
                 controls.update();
                 if (camera.position.distanceTo(targetPosition) < 0.1) {
-                    // Zoom terminé, lancer l'animation du texte si en attente
                     if (pendingTextAnimation) {
                         animateTextWrite(pendingTextAnimation);
                         pendingTextAnimation = null;
@@ -352,23 +371,21 @@
 
         const resetBtn = document.getElementById('resetBtn');
         resetBtn.addEventListener('click', () => {
-            camera.position.set(0, 5, 15);
+            camera.position.set(0, 0, 15);
             controls.target.set(0, 0, 0);
             controls.update();
             targetPosition = null;
             targetLookAt = null;
-            pendingTextAnimation = null; // Annuler toute animation de texte en attente
+            pendingTextAnimation = null;
             if (selectedPlane) {
                 selectedPlane.isSelected = false;
-                // Effacer et cacher le texte
                 selectedPlane.text.geometry.dispose();
                 selectedPlane.text.geometry = new THREE.TextGeometry('', {
                     font: loadedFont,
-                    size: 0.2, // Police réduite
+                    size: 0.2,
                     height: 0.01
                 });
                 selectedPlane.text.material.opacity = 0;
-                // Réduire l'opacité de l'image à 0.8
                 let opacity = selectedPlane.mesh.material.opacity;
                 const fadeOut = () => {
                     opacity -= 0.02;
@@ -387,13 +404,12 @@
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(window.devicePixelRatio); // Mettre à jour la résolution
+            renderer.setPixelRatio(window.devicePixelRatio);
         });
 
         // Boucle d'animation
         function animate() {
             requestAnimationFrame(animate);
-            animatePlanes();
             animateCamera();
             controls.update();
             renderer.render(scene, camera);
