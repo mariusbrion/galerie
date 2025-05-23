@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Globe 3D Interactif</title>
+    <title>Carte 2D Interactive</title>
     <style>
         body {
             margin: 0;
@@ -56,7 +56,7 @@
 
         // Caméra
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 0, 15);
+        camera.position.set(0, 0, 10); // Position au-dessus de la carte
 
         // Rendu
         const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -64,33 +64,33 @@
         renderer.setPixelRatio(window.devicePixelRatio);
         document.body.appendChild(renderer.domElement);
 
-        // Contrôles OrbitControls
+        // Contrôles OrbitControls pour panning et zoom
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
-        controls.minDistance = 5;
-        controls.maxDistance = 50;
+        controls.enableRotate = false; // Désactiver la rotation pour une carte 2D
+        controls.minDistance = 2;
+        controls.maxDistance = 20;
 
         // Éclairage
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
         scene.add(ambientLight);
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.4);
-        directionalLight.position.set(10, 20, 10);
-        scene.add(directionalLight);
 
-        // Création du globe
-        const earthRadius = 5;
-        const earthGeometry = new THREE.SphereGeometry(earthRadius, 64, 64);
-        const earthMaterial = new THREE.MeshBasicMaterial({
-            color: 0x1a1a1a, // Surface sombre pour contraste
+        // Création de la carte 2D
+        const mapWidth = 20;
+        const mapHeight = 10;
+        const mapGeometry = new THREE.PlaneGeometry(mapWidth, mapHeight);
+        const mapMaterial = new THREE.MeshBasicMaterial({
+            color: 0x1a1a1a, // Surface sombre
             transparent: true,
             opacity: 0.8
         });
-        const earth = new THREE.Mesh(earthGeometry, earthMaterial);
-        scene.add(earth);
+        const map = new THREE.Mesh(mapGeometry, mapMaterial);
+        map.position.set(0, 0, 0);
+        scene.add(map);
 
-        // Contours néon bleus
-        const wireframe = new THREE.WireframeGeometry(earthGeometry);
+        // Contours néon bleus (grille simplifiée)
+        const wireframe = new THREE.WireframeGeometry(mapGeometry);
         const wireframeMaterial = new THREE.LineBasicMaterial({
             color: 0x00b7eb, // Bleu néon
             linewidth: 2,
@@ -149,14 +149,12 @@
             }
         ];
 
-        // Convertir lat/lon en position 3D
-        function latLonToVector3(lat, lon, radius) {
-            const phi = (90 - lat) * (Math.PI / 180);
-            const theta = (lon + 180) * (Math.PI / 180);
-            const x = -radius * Math.sin(phi) * Math.cos(theta);
-            const z = radius * Math.sin(phi) * Math.sin(theta);
-            const y = radius * Math.cos(phi);
-            return new THREE.Vector3(x, y, z);
+        // Convertir lat/lon en position 2D sur la carte
+        function latLonTo2D(lat, lon, width, height) {
+            // Projection simplifiée : longitude -> x, latitude -> y
+            const x = (lon + 180) / 360 * width - width / 2; // Centre à 0
+            const y = -(lat - 90) / 180 * height + height / 2; // Inverser y pour que nord soit en haut
+            return new THREE.Vector3(x, y, 0.1); // z=0.1 pour éviter le clipping
         }
 
         // Création des plans pour les images
@@ -184,10 +182,10 @@
                     });
                     const plane = new THREE.Mesh(geometry, material);
 
-                    // Positionner sur le globe
-                    const position = latLonToVector3(data.lat, data.lon, earthRadius + 0.1);
+                    // Positionner sur la carte
+                    const position = latLonTo2D(data.lat, data.lon, mapWidth, mapHeight);
                     plane.position.copy(position);
-                    plane.lookAt(position.clone().multiplyScalar(2));
+                    plane.rotation.set(0, 0, 0); // Face à la caméra
                     scene.add(plane);
 
                     // Création du texte
@@ -203,7 +201,7 @@
                     });
                     const textMesh = new THREE.Mesh(textGeometry, textMaterial);
                     textMesh.position.copy(position.clone().sub(new THREE.Vector3(0.4, 0.4, 0)));
-                    textMesh.rotation.copy(plane.rotation);
+                    textMesh.rotation.set(0, 0, 0);
                     scene.add(textMesh);
 
                     planes.push({ 
@@ -318,7 +316,7 @@
                 const clickedPlane = planes.find(p => p.mesh === plane);
                 clickedPlane.isSelected = true;
                 selectedPlane = clickedPlane;
-                targetPosition = plane.position.clone().multiplyScalar(1.5);
+                targetPosition = new THREE.Vector3(plane.position.x, plane.position.y, 5); // Zoom à z=5
                 targetLookAt = plane.position.clone();
 
                 let opacity = clickedPlane.mesh.material.opacity;
@@ -366,7 +364,7 @@
 
         const resetBtn = document.getElementById('resetBtn');
         resetBtn.addEventListener('click', () => {
-            camera.position.set(0, 0, 15);
+            camera.position.set(0, 0, 10);
             controls.target.set(0, 0, 0);
             controls.update();
             targetPosition = null;
