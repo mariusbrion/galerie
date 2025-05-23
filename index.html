@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Carte 2D Interactive</title>
+    <title>Carte 3D Interactive des Projets</title>
     <style>
         body {
             margin: 0;
             overflow: hidden;
             background: #f5f5e6; /* Fond beige clair */
+            font-family: Arial, sans-serif;
         }
         canvas {
             display: block;
@@ -34,10 +35,54 @@
         button:hover {
             background: #555;
         }
+        #popup {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 20;
+            max-width: 350px;
+            text-align: center;
+            display: none;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        #popup img {
+            max-width: 300px;
+            height: auto;
+            margin-bottom: 10px;
+        }
+        #popup p {
+            margin: 0;
+            font-size: 14px;
+            color: #333;
+        }
+        #tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 15;
+            pointer-events: none;
+            display: none;
+        }
         @media (max-width: 768px) {
             button {
                 padding: 8px 15px;
                 font-size: 14px;
+            }
+            #popup {
+                max-width: 250px;
+            }
+            #popup img {
+                max-width: 200px;
+            }
+            #popup p {
+                font-size: 12px;
             }
         }
     </style>
@@ -47,8 +92,14 @@
         <button id="fullscreenBtn">Plein écran</button>
         <button id="resetBtn">Réinitialiser la vue</button>
     </div>
+    <div id="popup">
+        <img id="popupImage" src="" alt="">
+        <p id="popupText"></p>
+    </div>
+    <div id="tooltip"></div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.9.2/mapbox-gl.js"></script>
     <script>
         // Initialisation de la scène
         const scene = new THREE.Scene();
@@ -56,7 +107,7 @@
 
         // Caméra
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 0, 10); // Position au-dessus de la carte
+        camera.position.set(0, 50, 100);
 
         // Rendu
         const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -64,293 +115,176 @@
         renderer.setPixelRatio(window.devicePixelRatio);
         document.body.appendChild(renderer.domElement);
 
-        // Contrôles OrbitControls pour panning et zoom
+        // Contrôles OrbitControls
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
-        controls.enableRotate = false; // Désactiver la rotation pour une carte 2D
-        controls.minDistance = 2;
-        controls.maxDistance = 20;
+        controls.minDistance = 20;
+        controls.maxDistance = 200;
+        controls.target.set(0, 0, 0);
 
         // Éclairage
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
         scene.add(ambientLight);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.4);
+        directionalLight.position.set(10, 20, 10);
+        scene.add(directionalLight);
 
-        // Création de la carte 2D
-        const mapWidth = 20;
-        const mapHeight = 10;
-        const mapGeometry = new THREE.PlaneGeometry(mapWidth, mapHeight);
-        const mapMaterial = new THREE.MeshBasicMaterial({
-            color: 0x1a1a1a, // Surface sombre
-            transparent: true,
-            opacity: 0.8
-        });
-        const map = new THREE.Mesh(mapGeometry, mapMaterial);
-        map.position.set(0, 0, 0);
-        scene.add(map);
+        // Mapbox token
+        const mapboxAccessToken = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB5xD4Q'; // Token public par défaut
 
-        // Contours néon bleus (grille simplifiée)
-        const wireframe = new THREE.WireframeGeometry(mapGeometry);
-        const wireframeMaterial = new THREE.LineBasicMaterial({
-            color: 0x00b7eb, // Bleu néon
-            linewidth: 2,
-            transparent: true,
-            opacity: 0.7
-        });
-        const wireframeLines = new THREE.LineSegments(wireframe, wireframeMaterial);
-        scene.add(wireframeLines);
+        // Créer une carte plane
+        const mapWidth = 200;
+        const mapHeight = 100;
+        const geometry = new THREE.PlaneGeometry(mapWidth, mapHeight);
+        const textureLoader = new THREE.TextureLoader();
+        const mapTexture = textureLoader.load(`https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/256/0/0/0?access_token=${mapboxAccessToken}`);
+        const material = new THREE.MeshBasicMaterial({ map: mapTexture });
+        const mapPlane = new THREE.Mesh(geometry, material);
+        mapPlane.rotation.x = -Math.PI / 2; // Allonger la carte
+        scene.add(mapPlane);
 
-        // Données des images avec coordonnées géographiques
+        // Données des images avec coordonnées
         const imageData = [
             { 
                 url: 'carte_chatellerault.webp', 
                 desc: 'Cette carte propose une représentation minimaliste de Châtellerault, avec ses bâtiments en bleu foncé sur fond blanc. Ce contraste met en valeur la densité bâtie et la structure urbaine de la ville, tout en offrant une lecture épurée et graphique du territoire.', 
-                lat: 46.8165, lon: 0.5486 
+                lat: 46.8167, 
+                lng: 0.5452, 
+                location: 'Châtellerault, France' 
             },
             { 
                 url: 'carte_châtellerault.webp', 
                 desc: 'Carte historique de la région', 
-                lat: 46.8165, lon: 0.5486 
+                lat: 46.8167, 
+                lng: 0.5452, 
+                location: 'Châtellerault, France' 
             },
             { 
                 url: 'tenerife.jpg', 
                 desc: 'Cette photo a été prise à San Cristóbal de La Laguna, une ville peu touristique du nord de Tenerife, contrastant avec le sud de l’île largement dédié à un tourisme de masse. Tandis que les habitants du nord font face à des problèmes de sécheresse, le sud accueille d’immenses complexes touristiques, comme des parcs aquatiques gourmands en eau.', 
-                lat: 28.4853, lon: -16.3201 
+                lat: 28.4853, 
+                lng: -16.3201, 
+                location: 'San Cristóbal de La Laguna, Tenerife' 
             },
             { 
                 url: 'amenagement.JPG', 
                 desc: 'Les quais de la Vienne illustrent les efforts de redynamisation d’une ville moyenne : réaménagement des berges, valorisation du cadre naturel et mobilités douces cherchent à renforcer l’attractivité du centre face au déclin démographique.', 
-                lat: 46.8165, lon: 0.5486 
+                lat: 46.8167, 
+                lng: 0.5452, 
+                location: 'Châtellerault, France' 
             },
             { 
                 url: 'meriadek.jpg', 
                 desc: 'Quartier des années 60–70, Mériadeck rompt avec l’esthétique bordelaise par son architecture brutaliste et son urbanisme sur dalle. Malgré son apparence minérale, il intègre des espaces végétalisés en hauteur, illustrant une tentative précoce d’urbain-nature.', 
-                lat: 44.8378, lon: -0.5805 
+                lat: 44.8378, 
+                lng: -0.5837, 
+                location: 'Bordeaux, France' 
             },
             { 
                 url: 'Lyon(1).jpg', 
                 desc: 'Cette carte inverse les codes traditionnels : le réseau routier y apparaît en blanc sur un fond bleu profond. Ce contraste met en valeur la complexité et la finesse du maillage urbain lyonnais, offrant une lecture graphique et abstraite de la ville à travers ses voies de circulation.', 
-                lat: 45.7640, lon: 4.8357 
+                lat: 45.7640, 
+                lng: 4.8357, 
+                location: 'Lyon, France' 
             },
             { 
                 url: 'chaban.webp', 
                 desc: 'Cette photo montre le pont Chaban-Delmas, ouvrage emblématique de Bordeaux franchissant la Garonne. Sa particularité réside dans son tablier central mobile : au lieu de s’ouvrir latéralement comme un pont-levis classique, un segment du pont s’élève verticalement grâce à un système de pylônes et de câbles, permettant le passage des navires de grand gabarit.', 
-                lat: 44.8378, lon: -0.5805 
+                lat: 44.8586, 
+                lng: -0.5522, 
+                location: 'Bordeaux, France' 
             },
             { 
                 url: 'shangai.jpg', 
                 desc: 'Cette modélisation 3D illustre le quartier de Lujiazui et ses abords, où se côtoient gratte-ciels emblématiques (Shanghai Tower, World Financial Center...) et quartiers résidentiels plus modestes. Le contraste est frappant : verticalité extrême d’un côté, maisons basses et HLM de l’autre. Ce mélange d’échelles et de tissus urbains reflète la complexité et la densité unique de Shanghai.', 
-                lat: 31.2304, lon: 121.4737 
+                lat: 31.2357, 
+                lng: 121.5018, 
+                location: 'Shanghai, Chine' 
             },
             { 
                 url: 'guggenheim.jpg', 
                 desc: 'Icône d’architecture contemporaine en titane, le Guggenheim a transformé Bilbao : au-delà de sa forme spectaculaire, il a relancé l’économie locale et amorcé la reconversion urbaine de la ville post-industrielle. Un modèle de régénération par la culture.', 
-                lat: 43.2630, lon: -2.9350 
+                lat: 43.2689, 
+                lng: -2.9336, 
+                location: 'Bilbao, Espagne' 
             }
         ];
 
-        // Convertir lat/lon en position 2D sur la carte
-        function latLonTo2D(lat, lon, width, height) {
-            // Projection simplifiée : longitude -> x, latitude -> y
-            const x = (lon + 180) / 360 * width - width / 2; // Centre à 0
-            const y = -(lat - 90) / 180 * height + height / 2; // Inverser y pour que nord soit en haut
-            return new THREE.Vector3(x, y, 0.1); // z=0.1 pour éviter le clipping
+        // Conversion des coordonnées géographiques en coordonnées 3D
+        function latLngTo3D(lat, lng, mapWidth, mapHeight) {
+            const x = (lng + 180) / 360 * mapWidth - mapWidth / 2;
+            const y = 0.1; // Légèrement au-dessus de la carte
+            const z = -(lat - 90) / 180 * mapHeight;
+            return new THREE.Vector3(x, y, z);
         }
 
-        // Création des plans pour les images
-        const planes = [];
-        const loader = new THREE.TextureLoader();
-        let selectedPlane = null;
-        let loadedFont = null;
-
-        // Font loader pour le texte
-        const fontLoader = new THREE.FontLoader();
-        fontLoader.load('https://threejs.org/examples/fonts/gentilis_regular.typeface.json', (font) => {
-            loadedFont = font;
-            imageData.forEach((data, index) => {
-                loader.load(data.url, (texture) => {
-                    texture.minFilter = THREE.LinearFilter;
-                    texture.magFilter = THREE.LinearFilter;
-                    texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-
-                    const geometry = new THREE.PlaneGeometry(0.8, 0.6);
-                    const material = new THREE.MeshBasicMaterial({
-                        map: texture,
-                        transparent: true,
-                        opacity: 0,
-                        side: THREE.DoubleSide
-                    });
-                    const plane = new THREE.Mesh(geometry, material);
-
-                    // Positionner sur la carte
-                    const position = latLonTo2D(data.lat, data.lon, mapWidth, mapHeight);
-                    plane.position.copy(position);
-                    plane.rotation.set(0, 0, 0); // Face à la caméra
-                    scene.add(plane);
-
-                    // Création du texte
-                    const textGeometry = new THREE.TextGeometry('', {
-                        font: loadedFont,
-                        size: 0.15,
-                        height: 0.01
-                    });
-                    const textMaterial = new THREE.MeshBasicMaterial({
-                        color: 0x333333,
-                        transparent: true,
-                        opacity: 0
-                    });
-                    const textMesh = new THREE.Mesh(textGeometry, textMaterial);
-                    textMesh.position.copy(position.clone().sub(new THREE.Vector3(0.4, 0.4, 0)));
-                    textMesh.rotation.set(0, 0, 0);
-                    scene.add(textMesh);
-
-                    planes.push({ 
-                        mesh: plane, 
-                        text: textMesh, 
-                        fullText: data.desc, 
-                        isSelected: false 
-                    });
-
-                    // Animation fade-in
-                    let opacity = 0;
-                    const fadeIn = () => {
-                        opacity += 0.02;
-                        material.opacity = opacity;
-                        if (opacity < 0.8) {
-                            requestAnimationFrame(fadeIn);
-                        }
-                    };
-                    fadeIn();
-                }, undefined, (error) => {
-                    console.error('Erreur de chargement de l\'image :', data.url, error);
-                });
-            });
+        // Création des marqueurs
+        const markers = [];
+        const markerGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+        const markerMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+        imageData.forEach(data => {
+            const position = latLngTo3D(data.lat, data.lng, mapWidth, mapHeight);
+            const marker = new THREE.Mesh(markerGeometry, markerMaterial);
+            marker.position.copy(position);
+            marker.userData = { ...data }; // Stocker les données
+            scene.add(marker);
+            markers.push(marker);
         });
 
-        // Animation progressive du texte
-        function animateTextWrite(plane) {
-            if (!loadedFont) return;
-            
-            function addLineBreaks(text) {
-                const maxLineLength = 50;
-                let result = '';
-                let currentLineLength = 0;
-                let words = text.split(' ');
-                
-                for (let i = 0; i < words.length; i++) {
-                    let word = words[i];
-                    let wordLength = word.length + (currentLineLength > 0 ? 1 : 0);
-                    if (currentLineLength + wordLength > maxLineLength) {
-                        result += '\n';
-                        currentLineLength = 0;
-                    }
-                    result += (currentLineLength > 0 ? ' ' : '') + word;
-                    currentLineLength += wordLength;
-                }
-                return result;
-            }
-            
-            const formattedText = addLineBreaks(plane.fullText);
-            const lines = formattedText.split('\n');
-            let currentText = '';
-            let lineIndex = 0;
-            plane.text.material.opacity = 1;
-            
-            const delayPerLine = 50;
-            let lastUpdateTime = performance.now();
-            
-            const write = (currentTime) => {
-                if (lineIndex < lines.length) {
-                    if (currentTime - lastUpdateTime >= delayPerLine) {
-                        currentText += (lineIndex > 0 ? '\n' : '') + lines[lineIndex];
-                        const newGeometry = new THREE.TextGeometry(currentText, {
-                            font: loadedFont,
-                            size: 0.15,
-                            height: 0.01
-                        });
-                        plane.text.geometry.dispose();
-                        plane.text.geometry = newGeometry;
-                        lineIndex++;
-                        lastUpdateTime = currentTime;
-                    }
-                    requestAnimationFrame(write);
-                }
-            };
-            requestAnimationFrame(write);
-        }
-
-        // Gestion des clics
+        // Raycaster pour interactions
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
-        let targetPosition = null;
-        let targetLookAt = null;
-        let pendingTextAnimation = null;
+        let currentTooltipMarker = null;
 
+        // Gestion des clics
         function onClick(event) {
             mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
             mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
             raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(planes.map(p => p.mesh));
+            const intersects = raycaster.intersectObjects(markers);
+            const popup = document.getElementById('popup');
             if (intersects.length > 0) {
-                const plane = intersects[0].object;
-                if (selectedPlane) {
-                    selectedPlane.isSelected = false;
-                    selectedPlane.text.geometry.dispose();
-                    selectedPlane.text.geometry = new THREE.TextGeometry('', {
-                        font: loadedFont,
-                        size: 0.15,
-                        height: 0.01
-                    });
-                    selectedPlane.text.material.opacity = 0;
-                    let opacity = selectedPlane.mesh.material.opacity;
-                    const fadeOut = () => {
-                        opacity -= 0.02;
-                        selectedPlane.mesh.material.opacity = opacity;
-                        if (opacity > 0.8) {
-                            requestAnimationFrame(fadeOut);
-                        }
-                    };
-                    fadeOut();
-                }
-                const clickedPlane = planes.find(p => p.mesh === plane);
-                clickedPlane.isSelected = true;
-                selectedPlane = clickedPlane;
-                targetPosition = new THREE.Vector3(plane.position.x, plane.position.y, 5); // Zoom à z=5
-                targetLookAt = plane.position.clone();
-
-                let opacity = clickedPlane.mesh.material.opacity;
-                const fadeIn = () => {
-                    opacity += 0.02;
-                    clickedPlane.mesh.material.opacity = opacity;
-                    if (opacity < 1.0) {
-                        requestAnimationFrame(fadeIn);
-                    }
-                };
-                fadeIn();
-
-                pendingTextAnimation = clickedPlane;
+                const marker = intersects[0].object;
+                const data = marker.userData;
+                document.getElementById('popupImage').src = data.url;
+                document.getElementById('popupImage').alt = data.location;
+                document.getElementById('popupText').textContent = data.desc;
+                popup.style.display = 'block';
+                // Zoom vers le marqueur
+                const targetPos = marker.position.clone().add(new THREE.Vector3(0, 5, 10));
+                camera.position.lerp(targetPos, 0.1);
+                controls.target.copy(marker.position);
+                controls.update();
+            } else {
+                popup.style.display = 'none';
             }
         }
 
-        // Animation fluide de la caméra
-        function animateCamera() {
-            if (targetPosition && targetLookAt) {
-                camera.position.lerp(targetPosition, 0.1);
-                controls.target.lerp(targetLookAt, 0.1);
-                controls.update();
-                if (camera.position.distanceTo(targetPosition) < 0.1) {
-                    if (pendingTextAnimation) {
-                        animateTextWrite(pendingTextAnimation);
-                        pendingTextAnimation = null;
-                    }
-                    targetPosition = null;
-                    targetLookAt = null;
+        // Gestion du survol
+        function onMouseMove(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(markers);
+            const tooltip = document.getElementById('tooltip');
+            if (intersects.length > 0) {
+                const marker = intersects[0].object;
+                if (currentTooltipMarker !== marker) {
+                    currentTooltipMarker = marker;
+                    tooltip.textContent = marker.userData.location;
+                    tooltip.style.display = 'block';
+                    tooltip.style.left = `${event.clientX + 10}px`;
+                    tooltip.style.top = `${event.clientY - 10}px`;
                 }
+            } else {
+                currentTooltipMarker = null;
+                tooltip.style.display = 'none';
             }
         }
 
         window.addEventListener('click', onClick);
+        window.addEventListener('mousemove', onMouseMove);
 
         // Boutons de contrôle
         const fullscreenBtn = document.getElementById('fullscreenBtn');
@@ -364,32 +298,11 @@
 
         const resetBtn = document.getElementById('resetBtn');
         resetBtn.addEventListener('click', () => {
-            camera.position.set(0, 0, 10);
+            camera.position.set(0, 50, 100);
             controls.target.set(0, 0, 0);
             controls.update();
-            targetPosition = null;
-            targetLookAt = null;
-            pendingTextAnimation = null;
-            if (selectedPlane) {
-                selectedPlane.isSelected = false;
-                selectedPlane.text.geometry.dispose();
-                selectedPlane.text.geometry = new THREE.TextGeometry('', {
-                    font: loadedFont,
-                    size: 0.15,
-                    height: 0.01
-                });
-                selectedPlane.text.material.opacity = 0;
-                let opacity = selectedPlane.mesh.material.opacity;
-                const fadeOut = () => {
-                    opacity -= 0.02;
-                    selectedPlane.mesh.material.opacity = opacity;
-                    if (opacity > 0.8) {
-                        requestAnimationFrame(fadeOut);
-                    }
-                };
-                fadeOut();
-                selectedPlane = null;
-            }
+            document.getElementById('popup').style.display = 'none';
+            document.getElementById('tooltip').style.display = 'none';
         });
 
         // Gestion du redimensionnement
@@ -403,7 +316,6 @@
         // Boucle d'animation
         function animate() {
             requestAnimationFrame(animate);
-            animateCamera();
             controls.update();
             renderer.render(scene, camera);
         }
