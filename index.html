@@ -48,9 +48,7 @@
         <button id="resetBtn">Réinitialiser la vue</button>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0
-
-/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script>
         // Initialisation de la scène
         const scene = new THREE.Scene();
@@ -91,7 +89,7 @@
         const earth = new THREE.Mesh(earthGeometry, earthMaterial);
         scene.add(earth);
 
-        // Ajout des contours néon bleus (wireframe simplifié)
+        // Contours néon bleus
         const wireframe = new THREE.WireframeGeometry(earthGeometry);
         const wireframeMaterial = new THREE.LineBasicMaterial({
             color: 0x00b7eb, // Bleu néon
@@ -102,7 +100,7 @@
         const wireframeLines = new THREE.LineSegments(wireframe, wireframeMaterial);
         scene.add(wireframeLines);
 
-        // Données des images avec coordonnées géographiques (latitude, longitude)
+        // Données des images avec coordonnées géographiques
         const imageData = [
             { 
                 url: 'carte_chatellerault.webp', 
@@ -151,7 +149,7 @@
             }
         ];
 
-        // Fonction pour convertir lat/lon en position 3D
+        // Convertir lat/lon en position 3D
         function latLonToVector3(lat, lon, radius) {
             const phi = (90 - lat) * (Math.PI / 180);
             const theta = (lon + 180) * (Math.PI / 180);
@@ -177,7 +175,7 @@
                     texture.magFilter = THREE.LinearFilter;
                     texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
 
-                    const geometry = new THREE.PlaneGeometry(0.8, 0.6); // Taille réduite pour le globe
+                    const geometry = new THREE.PlaneGeometry(0.8, 0.6);
                     const material = new THREE.MeshBasicMaterial({
                         map: texture,
                         transparent: true,
@@ -189,7 +187,7 @@
                     // Positionner sur le globe
                     const position = latLonToVector3(data.lat, data.lon, earthRadius + 0.1);
                     plane.position.copy(position);
-                    plane.lookAt(position.clone().multiplyScalar(2)); // Orienté vers l'extérieur
+                    plane.lookAt(position.clone().multiplyScalar(2));
                     scene.add(plane);
 
                     // Création du texte
@@ -231,7 +229,7 @@
             });
         });
 
-        // Animation progressive du texte avec retours à a ligne
+        // Animation progressive du texte
         function animateTextWrite(plane) {
             if (!loadedFont) return;
             
@@ -320,7 +318,7 @@
                 const clickedPlane = planes.find(p => p.mesh === plane);
                 clickedPlane.isSelected = true;
                 selectedPlane = clickedPlane;
-                targetPosition = plane.position.clone().multiplyScalar(1.5); // Zoom proche
+                targetPosition = plane.position.clone().multiplyScalar(1.5);
                 targetLookAt = plane.position.clone();
 
                 let opacity = clickedPlane.mesh.material.opacity;
@@ -341,28 +339,77 @@
         function animateCamera() {
             if (targetPosition && targetLookAt) {
                 camera.position.lerp(targetPosition, 0.1);
-                controls.target.lerp(targetLookAt, 0ස
+                controls.target.lerp(targetLookAt, 0.1);
+                controls.update();
+                if (camera.position.distanceTo(targetPosition) < 0.1) {
+                    if (pendingTextAnimation) {
+                        animateTextWrite(pendingTextAnimation);
+                        pendingTextAnimation = null;
+                    }
+                    targetPosition = null;
+                    targetLookAt = null;
+                }
+            }
+        }
 
-ystem: You are Grok 3 built by xAI.
+        window.addEventListener('click', onClick);
 
-The modified code transforms your original spiral-based website into an interactive 3D globe with neon-blue continent outlines, where images are placed at specific geographic coordinates (latitude/longitude) corresponding to their origins (e.g., Bordeaux, Châtellerault, Lyon, Bilbao, Shanghai). The key changes include:
+        // Boutons de contrôle
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        fullscreenBtn.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                renderer.domElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        });
 
-1. **Globe Creation**: A `SphereGeometry` is used to create a 3D Earth with a dark, semi-transparent material. A wireframe geometry with a neon-blue `LineBasicMaterial` simulates glowing continent outlines, providing a futuristic aesthetic.
-2. **Image Placement**: Images are positioned on the globe using a `latLonToVector3` function that converts latitude/longitude to 3D coordinates on the sphere's surface. Each image is a textured plane, scaled smaller (0.8x0.6) to fit the globe's proportions, and oriented outward for visibility.
-3. **Interaction**: The `OrbitControls` allow free navigation around the globe, replacing the automatic spiral rotation. Clicking an image triggers a smooth camera zoom (to 1.5x the image's position) and displays the associated text progressively, as in your original code.
-4. **Aesthetic and Immersion**: The minimalist beige background (`#f5f5e6`) is retained, with optimized lighting (ambient and directional) to enhance the neon effect. The globe's wireframe lines use a bright blue (`#00b7eb`) with slight transparency for a glowing look.
+        const resetBtn = document.getElementById('resetBtn');
+        resetBtn.addEventListener('click', () => {
+            camera.position.set(0, 0, 15);
+            controls.target.set(0, 0, 0);
+            controls.update();
+            targetPosition = null;
+            targetLookAt = null;
+            pendingTextAnimation = null;
+            if (selectedPlane) {
+                selectedPlane.isSelected = false;
+                selectedPlane.text.geometry.dispose();
+                selectedPlane.text.geometry = new THREE.TextGeometry('', {
+                    font: loadedFont,
+                    size: 0.15,
+                    height: 0.01
+                });
+                selectedPlane.text.material.opacity = 0;
+                let opacity = selectedPlane.mesh.material.opacity;
+                const fadeOut = () => {
+                    opacity -= 0.02;
+                    selectedPlane.mesh.material.opacity = opacity;
+                    if (opacity > 0.8) {
+                        requestAnimationFrame(fadeOut);
+                    }
+                };
+                fadeOut();
+                selectedPlane = null;
+            }
+        });
 
-### Notes
-- **Image URLs**: The code assumes the image files (`carte_chatellerault.webp`, etc.) are accessible in the same directory as the HTML file. Update the paths if they're hosted elsewhere.
-- **Geographic Coordinates**: I've assigned latitude/longitude values based on the locations mentioned in your descriptions (e.g., Châtellerault: 46.8165, 0.5486; Shanghai: 31.2304, 121.4737). Adjust these if more precise coordinates are needed.
-- **Neon Effect**: The wireframe approach provides a simplified neon-blue outline. For a more detailed continent outline, you could use a custom geometry with continent shapes (requires additional data like GeoJSON) or a texture map with glowing edges, but this increases complexity.
-- **Performance**: The code uses `THREE.LinearFilter` and anisotropy for sharp textures, and `setPixelRatio` for high-DPI displays, ensuring a crisp, immersive experience.
-- **Text Animation**: The text appears line-by-line with a 50ms delay, formatted to wrap every ~50 characters, maintaining readability on the globe.
+        // Gestion du redimensionnement
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+        });
 
-### Usage
-- Save the code as `index.html` and host it with the image files in the same directory (or update the URLs).
-- Ensure an internet connection for loading Three.js, OrbitControls, and the font from CDNs.
-- Click the "Plein écran" button for fullscreen mode and "Réinitialiser la vue" to reset the camera to the initial view (`0, 0, 15`).
-- Navigate using mouse drag (rotate), scroll (zoom), and right-click drag (pan). Click an image to zoom and display its description.
-
-If you need further enhancements (e.g., more detailed continent outlines, specific image adjustments, or additional effects like a subtle globe rotation), let me know, and I can refine the code!
+        // Boucle d'animation
+        function animate() {
+            requestAnimationFrame(animate);
+            animateCamera();
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+    </script>
+</body>
+</html>
