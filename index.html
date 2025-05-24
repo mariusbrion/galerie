@@ -49,16 +49,17 @@
             line-height: 1.5;
         }
         .photo-placeholder {
-            background: #e0e0e0;
             height: 200px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
-            font-size: 0.9em;
-            text-align: center;
             border-radius: 4px;
             margin-bottom: 15px;
+        }
+        .photo-placeholder img {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 4px;
         }
         #controls {
             position: fixed;
@@ -102,7 +103,6 @@
             }
             .photo-placeholder {
                 height: 150px;
-                font-size: 0.8em;
             }
             button {
                 padding: 8px 15px;
@@ -123,7 +123,7 @@
         <button id="nextBtn">Suivant ⟶</button>
     </div>
     <script>
-        // Initialize MapLibre with custom style
+        // Initialisation de la carte MapLibre avec un style personnalisé
         const map = new maplibregl.Map({
             container: 'map',
             style: {
@@ -193,8 +193,8 @@
                     }
                 ]
             },
-            center: [10, 50], // Center on Europe
-            zoom: 4,
+            center: [10, 50], // Centré sur l'Europe
+            zoom: 10, // Zoom initial bas pour éviter les noms de rues
             transformRequest: (url, resourceType) => {
                 if (resourceType === 'Tile' && url.startsWith('https://tiles.stadiamaps.com')) {
                     return {
@@ -205,67 +205,65 @@
             }
         });
 
-        // Location data (offset removed)
+        // Données des photos avec chemins locaux et coordonnées
         const photos = [
-            {
-                title: "San Cristóbal de La Laguna, Tenerife",
-                description: "Cette photo a été prise à San Cristóbal de La Laguna, une ville peu touristique du nord de Tenerife, contrastant avec le sud de l’île largement dédié à un tourisme de masse. Tandis que les habitants du nord font face à des problèmes de sécheresse, le sud accueille d’immenses complexes touristiques, comme des parcs aquatiques gourmands en eau.",
-                imagePlaceholder: "tenerife.jpg",
-                coordinates: [-16.3201, 28.4853],
-                city: "Tenerife"
-            },
-            {
-                title: "Bilbao, Espagne",
-                description: "Icône d’architecture contemporaine en titane, le Guggenheim a transformé Bilbao : au-delà de sa forme spectaculaire, il a relancé l’économie locale et amorcé la reconversion urbaine de la ville post-industrielle. Un modèle de régénération par la culture.",
-                imagePlaceholder: "guggenheim.jpg",
-                coordinates: [-2.9336, 43.2689],
-                city: "Bilbao"
-            },
-            {
-                title: "Bordeaux, France (Mériadeck)",
-                description: "Quartier des années 60–70, Mériadeck rompt avec l’esthétique bordelaise par son architecture brutaliste et son urbanisme sur dalle. Malgré son apparence minérale, il intègre des espaces végétalisés en hauteur, illustrant une tentative précoce d’urbain-nature.",
-                imagePlaceholder: "meriadek.jpg",
-                coordinates: [-0.5837, 44.8378],
-                city: "Bordeaux"
-            },
-            {
-                title: "Bordeaux, France (Pont Chaban-Delmas)",
-                description: "Cette photo montre le pont Chaban-Delmas, ouvrage emblématique de Bordeaux franchissant la Garonne. Sa particularité réside dans son tablier central mobile : au lieu de s’ouvrir latéralement comme un pont-levis classique, un segment du pont s’élève verticalement grâce à un système de pylônes et de câbles, permettant le passage des navires de grand gabarit.",
-                imagePlaceholder: "chaban.webp",
-                coordinates: [-0.5522, 44.8586],
-                city: "Bordeaux"
-            },
             {
                 title: "Châtellerault, France (Carte minimaliste)",
                 description: "Cette carte propose une représentation minimaliste de Châtellerault, avec ses bâtiments en bleu foncé sur fond blanc. Ce contraste met en valeur la densité bâtie et la structure urbaine de la ville, tout en offrant une lecture épurée et graphique du territoire.",
-                imagePlaceholder: "carte_chatellerault.webp",
-                coordinates: [0.5452, 46.8167],
-                city: "Châtellerault"
+                imageUrl: "carte_chatellerault.webp",
+                coordinates: [0.5452, 46.8167]
             },
             {
                 title: "Châtellerault, France (Carte historique)",
                 description: "Carte historique de la région.",
-                imagePlaceholder: "carte_châtellerault.webp",
-                coordinates: [0.5452, 46.8167],
-                city: "Châtellerault"
+                imageUrl: "carte_châtellerault.webp",
+                coordinates: [0.5452, 46.8167]
+            },
+            {
+                title: "San Cristóbal de La Laguna, Tenerife",
+                description: "Cette photo a été prise à San Cristóbal de La Laguna, une ville peu touristique du nord de Tenerife, contrastant avec le sud de l’île largement dédié à un tourisme de masse. Tandis que les habitants du nord font face à des problèmes de sécheresse, le sud accueille d’immenses complexes touristiques, comme des parcs aquatiques gourmands en eau.",
+                imageUrl: "tenerife.jpg",
+                coordinates: [-16.3201, 28.4853]
             },
             {
                 title: "Châtellerault, France (Quais de la Vienne)",
                 description: "Les quais de la Vienne illustrent les efforts de redynamisation d’une ville moyenne : réaménagement des berges, valorisation du cadre naturel et mobilités douces cherchent à renforcer l’attractivité du centre face au déclin démographique.",
-                imagePlaceholder: "amenagement.JPG",
-                coordinates: [0.5452, 46.8167],
-                city: "Châtellerault"
+                imageUrl: "amenagement.JPG",
+                coordinates: [0.5452, 46.8167]
+            },
+            {
+                title: "Bordeaux, France (Mériadeck)",
+                description: "Quartier des années 60–70, Mériadeck rompt avec l’esthétique bordelaise par son architecture brutaliste et son urbanisme sur dalle. Malgré son apparence minérale, il intègre des espaces végétalisés en hauteur, illustrant une tentative précoce d’urbain-nature.",
+                imageUrl: "meriadek.jpg",
+                coordinates: [-0.5837, 44.8378]
             },
             {
                 title: "Lyon, France",
                 description: "Cette carte inverse les codes traditionnels : le réseau routier y apparaît en blanc sur un fond bleu profond. Ce contraste met en valeur la complexité et la finesse du maillage urbain lyonnais, offrant une lecture graphique et abstraite de la ville à travers ses voies de circulation.",
-                imagePlaceholder: "Lyon(1).jpg",
-                coordinates: [4.8357, 45.7640],
-                city: "Lyon"
+                imageUrl: "Lyon(1).jpg",
+                coordinates: [4.8357, 45.7640]
+            },
+            {
+                title: "Bordeaux, France (Pont Chaban-Delmas)",
+                description: "Cette photo montre le pont Chaban-Delmas, ouvrage emblématique de Bordeaux franchissant la Garonne. Sa particularité réside dans son tablier central mobile : au lieu de s’ouvrir latéralement comme un pont-levis classique, un segment du pont s’élève verticalement grâce à un système de pylônes et de câbles, permettant le passage des navires de grand gabarit.",
+                imageUrl: "chaban.webp",
+                coordinates: [-0.5522, 44.8586]
+            },
+            {
+                title: "Shanghai, Chine",
+                description: "Cette modélisation 3D illustre le quartier de Lujiazui et ses abords, où se côtoient gratte-ciels emblématiques (Shanghai Tower, World Financial Center...) et quartiers résidentiels plus modestes. Le contraste est frappant : verticalité extrême d’un côté, maisons basses et HLM de l’autre. Ce mélange d’échelles et de tissus urbains reflète la complexité et la densité unique de Shanghai.",
+                imageUrl: "shangai.jpg",
+                coordinates: [121.5018, 31.2357]
+            },
+            {
+                title: "Bilbao, Espagne",
+                description: "Icône d’architecture contemporaine en titane, le Guggenheim a transformé Bilbao : au-delà de sa forme spectaculaire, il a relancé l’économie locale et amorcé la reconversion urbaine de la ville post-industrielle. Un modèle de régénération par la culture.",
+                imageUrl: "guggenheim.jpg",
+                coordinates: [-2.9336, 43.2689]
             }
         ];
 
-        // Add markers
+        // Ajout des marqueurs
         const markers = [];
         photos.forEach((photo, index) => {
             const el = document.createElement('div');
@@ -285,7 +283,7 @@
 
         let currentIndex = -1;
 
-        // Show sidebar with location details
+        // Affichage de la barre latérale avec les détails et l'image locale
         function showSidebar(index) {
             const sidebar = document.getElementById('sidebar');
             const title = document.getElementById('sidebar-title');
@@ -293,27 +291,37 @@
             const description = document.getElementById('sidebar-description');
 
             title.textContent = photos[index].title;
-            photoDiv.textContent = photos[index].imagePlaceholder;
             description.textContent = photos[index].description;
+
+            // Effacer le contenu précédent et ajouter l'image
+            photoDiv.innerHTML = '';
+            const img = document.createElement('img');
+            img.src = photos[index].imageUrl; // Chemin relatif
+            img.alt = photos[index].title;
+            img.onerror = () => {
+                photoDiv.textContent = 'Image non disponible';
+            };
+            photoDiv.appendChild(img);
+
             sidebar.classList.add('active');
 
-            // Fly to location
+            // Navigation vers la localisation avec un zoom réduit
             map.flyTo({
                 center: photos[index].coordinates,
-                zoom: 15, // Zoom in to show buildings
+                zoom: 12, // Zoom moins élevé pour éviter les noms de rues
                 essential: true,
                 speed: 1.2
             });
         }
 
-        // Select a location
+        // Sélection d'une localisation
         function selectLocation(index) {
             currentIndex = index;
             showSidebar(index);
             updateButtons();
         }
 
-        // Update button states
+        // Mise à jour des boutons
         function updateButtons() {
             const prevBtn = document.getElementById('prevBtn');
             const nextBtn = document.getElementById('nextBtn');
@@ -321,7 +329,7 @@
             nextBtn.disabled = currentIndex >= photos.length - 1;
         }
 
-        // Navigation button events
+        // Événements des boutons de navigation
         document.getElementById('prevBtn').addEventListener('click', () => {
             if (currentIndex > 0) {
                 selectLocation(currentIndex - 1);
@@ -334,10 +342,10 @@
             }
         });
 
-        // Initialize buttons
+        // Initialisation des boutons
         updateButtons();
 
-        // Close sidebar on map click (outside markers)
+        // Fermeture de la barre latérale au clic sur la carte (hors marqueurs)
         map.on('click', (e) => {
             const features = map.queryRenderedFeatures(e.point, {
                 layers: []
@@ -350,7 +358,7 @@
             }
         });
 
-        // Responsive map resize
+        // Redimensionnement responsive de la carte
         window.addEventListener('resize', () => {
             map.resize();
         });
