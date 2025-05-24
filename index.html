@@ -25,7 +25,7 @@
             right: 20px;
             width: 50vw;
             max-height: calc(100vh - 40px);
-            background: rgba(255, 255, 255, 0.8); /* Fond plus transparent */
+            background: rgba(255, 255, 255, 0.8); /* Fond transparent */
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
             border-radius: 8px;
             padding: 20px;
@@ -278,7 +278,7 @@
         let currentIndex = -1;
 
         // Fonction pour animer le texte caractère par caractère
-        function animateText(element, text, speed = 50) {
+        function animateText(element, text, speed = 1) { // Vitesse réduite à 2ms par caractère
             element.textContent = '';
             let i = 0;
             function type() {
