@@ -23,9 +23,9 @@
             position: fixed;
             top: 20px;
             right: 20px;
-            width: 50vw; /* Moitié de la largeur de l'écran */
+            width: 50vw;
             max-height: calc(100vh - 40px);
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(255, 255, 255, 0.8); /* Fond plus transparent */
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
             border-radius: 8px;
             padding: 20px;
@@ -36,6 +36,7 @@
         }
         #sidebar.active {
             display: block;
+            opacity: 1;
         }
         #sidebar h2 {
             margin: 0 0 10px;
@@ -49,7 +50,7 @@
             line-height: 1.5;
         }
         .photo-placeholder {
-            height: 300px; /* Hauteur augmentée pour les photos */
+            height: 300px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -89,7 +90,7 @@
         }
         @media (max-width: 768px) {
             #sidebar {
-                width: 90vw; /* Adaptation pour mobile */
+                width: 90vw;
                 top: 10px;
                 right: 10px;
                 padding: 15px;
@@ -101,7 +102,7 @@
                 font-size: 0.9em;
             }
             .photo-placeholder {
-                height: 200px; /* Adaptation pour mobile */
+                height: 200px;
             }
             button {
                 padding: 8px 15px;
@@ -231,6 +232,12 @@
                 coordinates: [-0.5522, 44.8586]
             },
             {
+                title: "Châtellerault, France (Carte minimaliste)",
+                description: "Cette carte propose une représentation minimaliste de Châtellerault, avec ses bâtiments en bleu foncé sur fond blanc. Ce contraste met en valeur la densité bâtie et la structure urbaine de la ville, tout en offrant une lecture épurée et graphique du territoire.",
+                imageUrl: "carte_chatellerault.webp",
+                coordinates: [0.5452, 46.8167]
+            },
+            {
                 title: "Châtellerault, France (Quais de la Vienne)",
                 description: "Les quais de la Vienne illustrent les efforts de redynamisation d’une ville moyenne : réaménagement des berges, valorisation du cadre naturel et mobilités douces cherchent à renforcer l’attractivité du centre face au déclin démographique.",
                 imageUrl: "amenagement.JPG",
@@ -270,34 +277,56 @@
 
         let currentIndex = -1;
 
-        // Affichage de la barre latérale avec les détails et l'image locale
+        // Fonction pour animer le texte caractère par caractère
+        function animateText(element, text, speed = 50) {
+            element.textContent = '';
+            let i = 0;
+            function type() {
+                if (i < text.length) {
+                    element.textContent += text.charAt(i);
+                    i++;
+                    setTimeout(type, speed);
+                }
+            }
+            type();
+        }
+
+        // Affichage de la barre latérale après l'animation flyTo
         function showSidebar(index) {
             const sidebar = document.getElementById('sidebar');
             const title = document.getElementById('sidebar-title');
             const photoDiv = document.getElementById('sidebar-photo');
             const description = document.getElementById('sidebar-description');
 
-            title.textContent = photos[index].title;
-            description.textContent = photos[index].description;
+            // Cacher la barre latérale pendant l'animation
+            sidebar.classList.remove('active');
 
-            // Effacer le contenu précédent et ajouter l'image
-            photoDiv.innerHTML = '';
-            const img = document.createElement('img');
-            img.src = photos[index].imageUrl; // Chemin relatif
-            img.alt = photos[index].title;
-            img.onerror = () => {
-                photoDiv.textContent = 'Image non disponible';
-            };
-            photoDiv.appendChild(img);
-
-            sidebar.classList.add('active');
-
-            // Navigation vers la localisation avec un zoom réduit
+            // Navigation vers la localisation
             map.flyTo({
                 center: photos[index].coordinates,
-                zoom: 12, // Zoom moins élevé pour éviter les noms de rues
+                zoom: 12, // Zoom réduit pour éviter les noms de rues
                 essential: true,
                 speed: 1.2
+            });
+
+            // Afficher la barre latérale après l'animation
+            map.once('moveend', () => {
+                title.textContent = photos[index].title;
+
+                // Effacer le contenu précédent et ajouter l'image
+                photoDiv.innerHTML = '';
+                const img = document.createElement('img');
+                img.src = photos[index].imageUrl;
+                img.alt = photos[index].title;
+                img.onerror = () => {
+                    photoDiv.textContent = 'Image non disponible';
+                };
+                photoDiv.appendChild(img);
+
+                // Animer le texte de la description
+                animateText(description, photos[index].description);
+
+                sidebar.classList.add('active');
             });
         }
 
@@ -308,25 +337,23 @@
             updateButtons();
         }
 
-        // Mise à jour des boutons
+        // Mise à jour des boutons avec navigation circulaire
         function updateButtons() {
             const prevBtn = document.getElementById('prevBtn');
             const nextBtn = document.getElementById('nextBtn');
-            prevBtn.disabled = currentIndex <= 0;
-            nextBtn.disabled = currentIndex >= photos.length - 1;
+            prevBtn.disabled = false; // Toujours actif pour la boucle
+            nextBtn.disabled = false; // Toujours actif pour la boucle
         }
 
-        // Événements des boutons de navigation
+        // Événements des boutons de navigation avec boucle
         document.getElementById('prevBtn').addEventListener('click', () => {
-            if (currentIndex > 0) {
-                selectLocation(currentIndex - 1);
-            }
+            currentIndex = (currentIndex <= 0) ? photos.length - 1 : currentIndex - 1;
+            selectLocation(currentIndex);
         });
 
         document.getElementById('nextBtn').addEventListener('click', () => {
-            if (currentIndex < photos.length - 1) {
-                selectLocation(currentIndex + 1);
-            }
+            currentIndex = (currentIndex >= photos.length - 1) ? 0 : currentIndex + 1;
+            selectLocation(currentIndex);
         });
 
         // Initialisation des boutons
