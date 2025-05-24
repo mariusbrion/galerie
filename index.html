@@ -3,323 +3,357 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Carte 3D Interactive des Projets</title>
+    <title>Carte Interactive Géolocalisée</title>
+    <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+    <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet">
     <style>
         body {
             margin: 0;
-            overflow: hidden;
-            background: #f5f5e6; /* Fond beige clair */
             font-family: Arial, sans-serif;
+            overflow: hidden;
         }
-        canvas {
-            display: block;
-            width: 100vw;
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
             height: 100vh;
         }
+        #sidebar {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 300px;
+            max-height: calc(100vh - 40px);
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            border-radius: 8px;
+            padding: 20px;
+            overflow-y: auto;
+            display: none;
+            transition: opacity 0.3s ease;
+            z-index: 1000;
+        }
+        #sidebar.active {
+            display: block;
+        }
+        #sidebar h2 {
+            margin: 0 0 10px;
+            font-size: 1.5em;
+            color: #333;
+        }
+        #sidebar p {
+            margin: 0 0 15px;
+            font-size: 1em;
+            color: #555;
+            line-height: 1.5;
+        }
+        .photo-placeholder {
+            background: #e0e0e0;
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.9em;
+            text-align: center;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
         #controls {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            z-index: 10;
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 1000;
         }
         button {
             padding: 10px 20px;
-            margin: 5px;
             border: none;
-            background: #333;
+            background: #007cbf;
             color: white;
             cursor: pointer;
             border-radius: 5px;
-            font-size: 16px;
+            font-size: 1em;
+            transition: background 0.2s;
         }
         button:hover {
-            background: #555;
+            background: #005f99;
         }
-        #popup {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(255, 255, 255, 0.9);
-            padding: 20px;
-            border-radius: 10px;
-            z-index: 20;
-            max-width: 350px;
-            text-align: center;
-            display: none;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
-        #popup img {
-            max-width: 300px;
-            height: auto;
-            margin-bottom: 10px;
-        }
-        #popup p {
-            margin: 0;
-            font-size: 14px;
-            color: #333;
-        }
-        #tooltip {
-            position: absolute;
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-size: 12px;
-            z-index: 15;
-            pointer-events: none;
-            display: none;
+        button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
         }
         @media (max-width: 768px) {
+            #sidebar {
+                width: 80%;
+                max-width: 300px;
+                top: 10px;
+                right: 10px;
+                padding: 15px;
+            }
+            #sidebar h2 {
+                font-size: 1.2em;
+            }
+            #sidebar p {
+                font-size: 0.9em;
+            }
+            .photo-placeholder {
+                height: 150px;
+                font-size: 0.8em;
+            }
             button {
                 padding: 8px 15px;
-                font-size: 14px;
-            }
-            #popup {
-                max-width: 250px;
-            }
-            #popup img {
-                max-width: 200px;
-            }
-            #popup p {
-                font-size: 12px;
+                font-size: 0.9em;
             }
         }
     </style>
 </head>
 <body>
+    <div id="map"></div>
+    <div id="sidebar">
+        <h2 id="sidebar-title"></h2>
+        <div id="sidebar-photo" class="photo-placeholder"></div>
+        <p id="sidebar-description"></p>
+    </div>
     <div id="controls">
-        <button id="fullscreenBtn">Plein écran</button>
-        <button id="resetBtn">Réinitialiser la vue</button>
+        <button id="prevBtn">⟵ Précédent</button>
+        <button id="nextBtn">Suivant ⟶</button>
     </div>
-    <div id="popup">
-        <img id="popupImage" src="" alt="">
-        <p id="popupText"></p>
-    </div>
-    <div id="tooltip"></div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://api.mapbox.com/mapbox-gl-js/v2.9.2/mapbox-gl.js"></script>
     <script>
-        // Initialisation de la scène
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0xf5f5e6); // Fond beige clair
+        // Initialize MapLibre with custom style
+        const map = new maplibregl.Map({
+            container: 'map',
+            style: {
+                "version": 8,
+                "glyphs": "https://tiles.stadiamaps.com/fonts/{fontstack}/{range}.pbf?api_key=f11cdaaf-bd37-408c-b3e3-379ccec777f6",
+                "sources": {
+                    "openmaptiles": {
+                        "type": "vector",
+                        "url": "https://tiles.stadiamaps.com/data/openmaptiles.json?api_key=f11cdaaf-bd37-408c-b3e3-379ccec777f6"
+                    }
+                },
+                "layers": [
+                    {
+                        "id": "background",
+                        "type": "background",
+                        "paint": {
+                            "background-color": "#f8f4f0"
+                        }
+                    },
+                    {
+                        "id": "landuse",
+                        "type": "fill",
+                        "source": "openmaptiles",
+                        "source-layer": "landuse",
+                        "paint": {
+                            "fill-color": "#e0e0e0",
+                            "fill-opacity": 0.3
+                        }
+                    },
+                    {
+                        "id": "water",
+                        "type": "fill",
+                        "source": "openmaptiles",
+                        "source-layer": "water",
+                        "paint": {
+                            "fill-color": "#b3d1ff"
+                        }
+                    },
+                    {
+                        "id": "buildings",
+                        "type": "fill",
+                        "source": "openmaptiles",
+                        "source-layer": "building",
+                        "paint": {
+                            "fill-color": "#d3d3d3",
+                            "fill-opacity": 0.7
+                        },
+                        "minzoom": 15
+                    },
+                    {
+                        "id": "pois",
+                        "type": "symbol",
+                        "source": "openmaptiles",
+                        "source-layer": "poi",
+                        "layout": {
+                            "text-field": "{name}",
+                            "text-font": ["Open Sans Regular"],
+                            "text-size": 12,
+                            "text-offset": [0, 1.5]
+                        },
+                        "paint": {
+                            "text-color": "#333",
+                            "text-halo-color": "#fff",
+                            "text-halo-width": 1
+                        },
+                        "minzoom": 14
+                    }
+                ]
+            },
+            center: [10, 50], // Center on Europe
+            zoom: 4,
+            transformRequest: (url, resourceType) => {
+                if (resourceType === 'Tile' && url.startsWith('https://tiles.stadiamaps.com')) {
+                    return {
+                        url: url + (url.includes('?') ? '&' : '?') + 'api_key=f11cdaaf-bd37-408c-b3e3-379ccec777f6'
+                    };
+                }
+                return { url };
+            }
+        });
 
-        // Caméra
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 50, 100);
-
-        // Rendu
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
-        document.body.appendChild(renderer.domElement);
-
-        // Contrôles OrbitControls
-        const controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        controls.dampingFactor = 0.05;
-        controls.minDistance = 20;
-        controls.maxDistance = 200;
-        controls.target.set(0, 0, 0);
-
-        // Éclairage
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-        scene.add(ambientLight);
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.4);
-        directionalLight.position.set(10, 20, 10);
-        scene.add(directionalLight);
-
-        // Mapbox token
-        const mapboxAccessToken = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB5xD4Q'; // Token public par défaut
-
-        // Créer une carte plane
-        const mapWidth = 200;
-        const mapHeight = 100;
-        const geometry = new THREE.PlaneGeometry(mapWidth, mapHeight);
-        const textureLoader = new THREE.TextureLoader();
-        const mapTexture = textureLoader.load(`https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/256/0/0/0?access_token=${mapboxAccessToken}`);
-        const material = new THREE.MeshBasicMaterial({ map: mapTexture });
-        const mapPlane = new THREE.Mesh(geometry, material);
-        mapPlane.rotation.x = -Math.PI / 2; // Allonger la carte
-        scene.add(mapPlane);
-
-        // Données des images avec coordonnées
-        const imageData = [
-            { 
-                url: 'carte_chatellerault.webp', 
-                desc: 'Cette carte propose une représentation minimaliste de Châtellerault, avec ses bâtiments en bleu foncé sur fond blanc. Ce contraste met en valeur la densité bâtie et la structure urbaine de la ville, tout en offrant une lecture épurée et graphique du territoire.', 
-                lat: 46.8167, 
-                lng: 0.5452, 
-                location: 'Châtellerault, France' 
+        // Location data (offset removed)
+        const photos = [
+            {
+                title: "San Cristóbal de La Laguna, Tenerife",
+                description: "Cette photo a été prise à San Cristóbal de La Laguna, une ville peu touristique du nord de Tenerife, contrastant avec le sud de l’île largement dédié à un tourisme de masse. Tandis que les habitants du nord font face à des problèmes de sécheresse, le sud accueille d’immenses complexes touristiques, comme des parcs aquatiques gourmands en eau.",
+                imagePlaceholder: "tenerife.jpg",
+                coordinates: [-16.3201, 28.4853],
+                city: "Tenerife"
             },
-            { 
-                url: 'carte_châtellerault.webp', 
-                desc: 'Carte historique de la région', 
-                lat: 46.8167, 
-                lng: 0.5452, 
-                location: 'Châtellerault, France' 
+            {
+                title: "Bilbao, Espagne",
+                description: "Icône d’architecture contemporaine en titane, le Guggenheim a transformé Bilbao : au-delà de sa forme spectaculaire, il a relancé l’économie locale et amorcé la reconversion urbaine de la ville post-industrielle. Un modèle de régénération par la culture.",
+                imagePlaceholder: "guggenheim.jpg",
+                coordinates: [-2.9336, 43.2689],
+                city: "Bilbao"
             },
-            { 
-                url: 'tenerife.jpg', 
-                desc: 'Cette photo a été prise à San Cristóbal de La Laguna, une ville peu touristique du nord de Tenerife, contrastant avec le sud de l’île largement dédié à un tourisme de masse. Tandis que les habitants du nord font face à des problèmes de sécheresse, le sud accueille d’immenses complexes touristiques, comme des parcs aquatiques gourmands en eau.', 
-                lat: 28.4853, 
-                lng: -16.3201, 
-                location: 'San Cristóbal de La Laguna, Tenerife' 
+            {
+                title: "Bordeaux, France (Mériadeck)",
+                description: "Quartier des années 60–70, Mériadeck rompt avec l’esthétique bordelaise par son architecture brutaliste et son urbanisme sur dalle. Malgré son apparence minérale, il intègre des espaces végétalisés en hauteur, illustrant une tentative précoce d’urbain-nature.",
+                imagePlaceholder: "meriadek.jpg",
+                coordinates: [-0.5837, 44.8378],
+                city: "Bordeaux"
             },
-            { 
-                url: 'amenagement.JPG', 
-                desc: 'Les quais de la Vienne illustrent les efforts de redynamisation d’une ville moyenne : réaménagement des berges, valorisation du cadre naturel et mobilités douces cherchent à renforcer l’attractivité du centre face au déclin démographique.', 
-                lat: 46.8167, 
-                lng: 0.5452, 
-                location: 'Châtellerault, France' 
+            {
+                title: "Bordeaux, France (Pont Chaban-Delmas)",
+                description: "Cette photo montre le pont Chaban-Delmas, ouvrage emblématique de Bordeaux franchissant la Garonne. Sa particularité réside dans son tablier central mobile : au lieu de s’ouvrir latéralement comme un pont-levis classique, un segment du pont s’élève verticalement grâce à un système de pylônes et de câbles, permettant le passage des navires de grand gabarit.",
+                imagePlaceholder: "chaban.webp",
+                coordinates: [-0.5522, 44.8586],
+                city: "Bordeaux"
             },
-            { 
-                url: 'meriadek.jpg', 
-                desc: 'Quartier des années 60–70, Mériadeck rompt avec l’esthétique bordelaise par son architecture brutaliste et son urbanisme sur dalle. Malgré son apparence minérale, il intègre des espaces végétalisés en hauteur, illustrant une tentative précoce d’urbain-nature.', 
-                lat: 44.8378, 
-                lng: -0.5837, 
-                location: 'Bordeaux, France' 
+            {
+                title: "Châtellerault, France (Carte minimaliste)",
+                description: "Cette carte propose une représentation minimaliste de Châtellerault, avec ses bâtiments en bleu foncé sur fond blanc. Ce contraste met en valeur la densité bâtie et la structure urbaine de la ville, tout en offrant une lecture épurée et graphique du territoire.",
+                imagePlaceholder: "carte_chatellerault.webp",
+                coordinates: [0.5452, 46.8167],
+                city: "Châtellerault"
             },
-            { 
-                url: 'Lyon(1).jpg', 
-                desc: 'Cette carte inverse les codes traditionnels : le réseau routier y apparaît en blanc sur un fond bleu profond. Ce contraste met en valeur la complexité et la finesse du maillage urbain lyonnais, offrant une lecture graphique et abstraite de la ville à travers ses voies de circulation.', 
-                lat: 45.7640, 
-                lng: 4.8357, 
-                location: 'Lyon, France' 
+            {
+                title: "Châtellerault, France (Carte historique)",
+                description: "Carte historique de la région.",
+                imagePlaceholder: "carte_châtellerault.webp",
+                coordinates: [0.5452, 46.8167],
+                city: "Châtellerault"
             },
-            { 
-                url: 'chaban.webp', 
-                desc: 'Cette photo montre le pont Chaban-Delmas, ouvrage emblématique de Bordeaux franchissant la Garonne. Sa particularité réside dans son tablier central mobile : au lieu de s’ouvrir latéralement comme un pont-levis classique, un segment du pont s’élève verticalement grâce à un système de pylônes et de câbles, permettant le passage des navires de grand gabarit.', 
-                lat: 44.8586, 
-                lng: -0.5522, 
-                location: 'Bordeaux, France' 
+            {
+                title: "Châtellerault, France (Quais de la Vienne)",
+                description: "Les quais de la Vienne illustrent les efforts de redynamisation d’une ville moyenne : réaménagement des berges, valorisation du cadre naturel et mobilités douces cherchent à renforcer l’attractivité du centre face au déclin démographique.",
+                imagePlaceholder: "amenagement.JPG",
+                coordinates: [0.5452, 46.8167],
+                city: "Châtellerault"
             },
-            { 
-                url: 'shangai.jpg', 
-                desc: 'Cette modélisation 3D illustre le quartier de Lujiazui et ses abords, où se côtoient gratte-ciels emblématiques (Shanghai Tower, World Financial Center...) et quartiers résidentiels plus modestes. Le contraste est frappant : verticalité extrême d’un côté, maisons basses et HLM de l’autre. Ce mélange d’échelles et de tissus urbains reflète la complexité et la densité unique de Shanghai.', 
-                lat: 31.2357, 
-                lng: 121.5018, 
-                location: 'Shanghai, Chine' 
-            },
-            { 
-                url: 'guggenheim.jpg', 
-                desc: 'Icône d’architecture contemporaine en titane, le Guggenheim a transformé Bilbao : au-delà de sa forme spectaculaire, il a relancé l’économie locale et amorcé la reconversion urbaine de la ville post-industrielle. Un modèle de régénération par la culture.', 
-                lat: 43.2689, 
-                lng: -2.9336, 
-                location: 'Bilbao, Espagne' 
+            {
+                title: "Lyon, France",
+                description: "Cette carte inverse les codes traditionnels : le réseau routier y apparaît en blanc sur un fond bleu profond. Ce contraste met en valeur la complexité et la finesse du maillage urbain lyonnais, offrant une lecture graphique et abstraite de la ville à travers ses voies de circulation.",
+                imagePlaceholder: "Lyon(1).jpg",
+                coordinates: [4.8357, 45.7640],
+                city: "Lyon"
             }
         ];
 
-        // Conversion des coordonnées géographiques en coordonnées 3D
-        function latLngTo3D(lat, lng, mapWidth, mapHeight) {
-            const x = (lng + 180) / 360 * mapWidth - mapWidth / 2;
-            const y = 0.1; // Légèrement au-dessus de la carte
-            const z = -(lat - 90) / 180 * mapHeight;
-            return new THREE.Vector3(x, y, z);
-        }
-
-        // Création des marqueurs
+        // Add markers
         const markers = [];
-        const markerGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
-        const markerMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-        imageData.forEach(data => {
-            const position = latLngTo3D(data.lat, data.lng, mapWidth, mapHeight);
-            const marker = new THREE.Mesh(markerGeometry, markerMaterial);
-            marker.position.copy(position);
-            marker.userData = { ...data }; // Stocker les données
-            scene.add(marker);
+        photos.forEach((photo, index) => {
+            const el = document.createElement('div');
+            el.style.backgroundColor = '#007cbf';
+            el.style.width = '12px';
+            el.style.height = '12px';
+            el.style.borderRadius = '50%';
+            el.style.cursor = 'pointer';
+
+            const marker = new maplibregl.Marker(el)
+                .setLngLat(photo.coordinates)
+                .addTo(map);
+
+            el.addEventListener('click', () => selectLocation(index));
             markers.push(marker);
         });
 
-        // Raycaster pour interactions
-        const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2();
-        let currentTooltipMarker = null;
+        let currentIndex = -1;
 
-        // Gestion des clics
-        function onClick(event) {
-            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-            raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(markers);
-            const popup = document.getElementById('popup');
-            if (intersects.length > 0) {
-                const marker = intersects[0].object;
-                const data = marker.userData;
-                document.getElementById('popupImage').src = data.url;
-                document.getElementById('popupImage').alt = data.location;
-                document.getElementById('popupText').textContent = data.desc;
-                popup.style.display = 'block';
-                // Zoom vers le marqueur
-                const targetPos = marker.position.clone().add(new THREE.Vector3(0, 5, 10));
-                camera.position.lerp(targetPos, 0.1);
-                controls.target.copy(marker.position);
-                controls.update();
-            } else {
-                popup.style.display = 'none';
-            }
+        // Show sidebar with location details
+        function showSidebar(index) {
+            const sidebar = document.getElementById('sidebar');
+            const title = document.getElementById('sidebar-title');
+            const photoDiv = document.getElementById('sidebar-photo');
+            const description = document.getElementById('sidebar-description');
+
+            title.textContent = photos[index].title;
+            photoDiv.textContent = photos[index].imagePlaceholder;
+            description.textContent = photos[index].description;
+            sidebar.classList.add('active');
+
+            // Fly to location
+            map.flyTo({
+                center: photos[index].coordinates,
+                zoom: 15, // Zoom in to show buildings
+                essential: true,
+                speed: 1.2
+            });
         }
 
-        // Gestion du survol
-        function onMouseMove(event) {
-            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-            raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(markers);
-            const tooltip = document.getElementById('tooltip');
-            if (intersects.length > 0) {
-                const marker = intersects[0].object;
-                if (currentTooltipMarker !== marker) {
-                    currentTooltipMarker = marker;
-                    tooltip.textContent = marker.userData.location;
-                    tooltip.style.display = 'block';
-                    tooltip.style.left = `${event.clientX + 10}px`;
-                    tooltip.style.top = `${event.clientY - 10}px`;
-                }
-            } else {
-                currentTooltipMarker = null;
-                tooltip.style.display = 'none';
-            }
+        // Select a location
+        function selectLocation(index) {
+            currentIndex = index;
+            showSidebar(index);
+            updateButtons();
         }
 
-        window.addEventListener('click', onClick);
-        window.addEventListener('mousemove', onMouseMove);
+        // Update button states
+        function updateButtons() {
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            prevBtn.disabled = currentIndex <= 0;
+            nextBtn.disabled = currentIndex >= photos.length - 1;
+        }
 
-        // Boutons de contrôle
-        const fullscreenBtn = document.getElementById('fullscreenBtn');
-        fullscreenBtn.addEventListener('click', () => {
-            if (!document.fullscreenElement) {
-                renderer.domElement.requestFullscreen();
-            } else {
-                document.exitFullscreen();
+        // Navigation button events
+        document.getElementById('prevBtn').addEventListener('click', () => {
+            if (currentIndex > 0) {
+                selectLocation(currentIndex - 1);
             }
         });
 
-        const resetBtn = document.getElementById('resetBtn');
-        resetBtn.addEventListener('click', () => {
-            camera.position.set(0, 50, 100);
-            controls.target.set(0, 0, 0);
-            controls.update();
-            document.getElementById('popup').style.display = 'none';
-            document.getElementById('tooltip').style.display = 'none';
+        document.getElementById('nextBtn').addEventListener('click', () => {
+            if (currentIndex < photos.length - 1) {
+                selectLocation(currentIndex + 1);
+            }
         });
 
-        // Gestion du redimensionnement
+        // Initialize buttons
+        updateButtons();
+
+        // Close sidebar on map click (outside markers)
+        map.on('click', (e) => {
+            const features = map.queryRenderedFeatures(e.point, {
+                layers: []
+            });
+            if (!features.length) {
+                const sidebar = document.getElementById('sidebar');
+                sidebar.classList.remove('active');
+                currentIndex = -1;
+                updateButtons();
+            }
+        });
+
+        // Responsive map resize
         window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(window.devicePixelRatio);
+            map.resize();
         });
-
-        // Boucle d'animation
-        function animate() {
-            requestAnimationFrame(animate);
-            controls.update();
-            renderer.render(scene, camera);
-        }
-        animate();
     </script>
 </body>
 </html>
