@@ -23,7 +23,7 @@
             position: fixed;
             top: 20px;
             right: 20px;
-            width: 300px;
+            width: 50vw; /* Moitié de la largeur de l'écran */
             max-height: calc(100vh - 40px);
             background: rgba(255, 255, 255, 0.95);
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
@@ -49,7 +49,7 @@
             line-height: 1.5;
         }
         .photo-placeholder {
-            height: 200px;
+            height: 300px; /* Hauteur augmentée pour les photos */
             display: flex;
             align-items: center;
             justify-content: center;
@@ -89,8 +89,7 @@
         }
         @media (max-width: 768px) {
             #sidebar {
-                width: 80%;
-                max-width: 300px;
+                width: 90vw; /* Adaptation pour mobile */
                 top: 10px;
                 right: 10px;
                 padding: 15px;
@@ -102,7 +101,7 @@
                 font-size: 0.9em;
             }
             .photo-placeholder {
-                height: 150px;
+                height: 200px; /* Adaptation pour mobile */
             }
             button {
                 padding: 8px 15px;
@@ -123,7 +122,7 @@
         <button id="nextBtn">Suivant ⟶</button>
     </div>
     <script>
-        // Initialisation de la carte MapLibre avec un style personnalisé
+        // Initialisation de la carte MapLibre
         const map = new maplibregl.Map({
             container: 'map',
             style: {
@@ -194,7 +193,7 @@
                 ]
             },
             center: [10, 50], // Centré sur l'Europe
-            zoom: 10, // Zoom initial bas pour éviter les noms de rues
+            zoom: 2, // Zoom initial pour voir tous les points
             transformRequest: (url, resourceType) => {
                 if (resourceType === 'Tile' && url.startsWith('https://tiles.stadiamaps.com')) {
                     return {
@@ -205,20 +204,8 @@
             }
         });
 
-        // Données des photos avec chemins locaux et coordonnées
+        // Données des photos triées d'ouest en est (Tenerife à Shanghai)
         const photos = [
-            {
-                title: "Châtellerault, France (Carte minimaliste)",
-                description: "Cette carte propose une représentation minimaliste de Châtellerault, avec ses bâtiments en bleu foncé sur fond blanc. Ce contraste met en valeur la densité bâtie et la structure urbaine de la ville, tout en offrant une lecture épurée et graphique du territoire.",
-                imageUrl: "carte_chatellerault.webp",
-                coordinates: [0.5452, 46.8167]
-            },
-            {
-                title: "Châtellerault, France (Carte historique)",
-                description: "Carte historique de la région.",
-                imageUrl: "carte_châtellerault.webp",
-                coordinates: [0.5452, 46.8167]
-            },
             {
                 title: "San Cristóbal de La Laguna, Tenerife",
                 description: "Cette photo a été prise à San Cristóbal de La Laguna, une ville peu touristique du nord de Tenerife, contrastant avec le sud de l’île largement dédié à un tourisme de masse. Tandis que les habitants du nord font face à des problèmes de sécheresse, le sud accueille d’immenses complexes touristiques, comme des parcs aquatiques gourmands en eau.",
@@ -226,10 +213,10 @@
                 coordinates: [-16.3201, 28.4853]
             },
             {
-                title: "Châtellerault, France (Quais de la Vienne)",
-                description: "Les quais de la Vienne illustrent les efforts de redynamisation d’une ville moyenne : réaménagement des berges, valorisation du cadre naturel et mobilités douces cherchent à renforcer l’attractivité du centre face au déclin démographique.",
-                imageUrl: "amenagement.JPG",
-                coordinates: [0.5452, 46.8167]
+                title: "Bilbao, Espagne",
+                description: "Icône d’architecture contemporaine en titane, le Guggenheim a transformé Bilbao : au-delà de sa forme spectaculaire, il a relancé l’économie locale et amorcé la reconversion urbaine de la ville post-industrielle. Un modèle de régénération par la culture.",
+                imageUrl: "guggenheim.jpg",
+                coordinates: [-2.9336, 43.2689]
             },
             {
                 title: "Bordeaux, France (Mériadeck)",
@@ -238,28 +225,28 @@
                 coordinates: [-0.5837, 44.8378]
             },
             {
-                title: "Lyon, France",
-                description: "Cette carte inverse les codes traditionnels : le réseau routier y apparaît en blanc sur un fond bleu profond. Ce contraste met en valeur la complexité et la finesse du maillage urbain lyonnais, offrant une lecture graphique et abstraite de la ville à travers ses voies de circulation.",
-                imageUrl: "Lyon(1).jpg",
-                coordinates: [4.8357, 45.7640]
-            },
-            {
                 title: "Bordeaux, France (Pont Chaban-Delmas)",
                 description: "Cette photo montre le pont Chaban-Delmas, ouvrage emblématique de Bordeaux franchissant la Garonne. Sa particularité réside dans son tablier central mobile : au lieu de s’ouvrir latéralement comme un pont-levis classique, un segment du pont s’élève verticalement grâce à un système de pylônes et de câbles, permettant le passage des navires de grand gabarit.",
                 imageUrl: "chaban.webp",
                 coordinates: [-0.5522, 44.8586]
             },
             {
+                title: "Châtellerault, France (Quais de la Vienne)",
+                description: "Les quais de la Vienne illustrent les efforts de redynamisation d’une ville moyenne : réaménagement des berges, valorisation du cadre naturel et mobilités douces cherchent à renforcer l’attractivité du centre face au déclin démographique.",
+                imageUrl: "amenagement.JPG",
+                coordinates: [0.5452, 46.8167]
+            },
+            {
+                title: "Lyon, France",
+                description: "Cette carte inverse les codes traditionnels : le réseau routier y apparaît en blanc sur un fond bleu profond. Ce contraste met en valeur la complexité et la finesse du maillage urbain lyonnais, offrant une lecture graphique et abstraite de la ville à travers ses voies de circulation.",
+                imageUrl: "Lyon(1).jpg",
+                coordinates: [4.8357, 45.7640]
+            },
+            {
                 title: "Shanghai, Chine",
                 description: "Cette modélisation 3D illustre le quartier de Lujiazui et ses abords, où se côtoient gratte-ciels emblématiques (Shanghai Tower, World Financial Center...) et quartiers résidentiels plus modestes. Le contraste est frappant : verticalité extrême d’un côté, maisons basses et HLM de l’autre. Ce mélange d’échelles et de tissus urbains reflète la complexité et la densité unique de Shanghai.",
                 imageUrl: "shangai.jpg",
                 coordinates: [121.5018, 31.2357]
-            },
-            {
-                title: "Bilbao, Espagne",
-                description: "Icône d’architecture contemporaine en titane, le Guggenheim a transformé Bilbao : au-delà de sa forme spectaculaire, il a relancé l’économie locale et amorcé la reconversion urbaine de la ville post-industrielle. Un modèle de régénération par la culture.",
-                imageUrl: "guggenheim.jpg",
-                coordinates: [-2.9336, 43.2689]
             }
         ];
 
